@@ -1,0 +1,6 @@
+{
+  "name": "共同記帳 MVP",
+  "description": "專屬情侶與夫妻的共同記帳 Web MVP 應用",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
