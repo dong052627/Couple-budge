@@ -18,10 +18,15 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
       onLoginSuccess(user);
     } catch (error: any) {
       console.error('Google Sign In Error:', error);
-      if (error && error.code === 'auth/popup-closed-by-user') {
+      const errCode = error?.code || 'unknown';
+      const errMsg = error?.message || '未知錯誤';
+      
+      if (errCode === 'auth/popup-closed-by-user') {
         setErrorMessage('登入視窗已被關閉，請再試一次。');
+      } else if (errCode === 'auth/operation-not-allowed') {
+        setErrorMessage(`登入失敗：請前往 Firebase Console 的 Authentication -> Sign-in method 啟用 Google 登入方式。 (${errCode})`);
       } else {
-        setErrorMessage('登入失敗，請確認網路連線或稍後再試。');
+        setErrorMessage(`登入失敗：${errMsg} (${errCode})。請確認網路連線，或檢查 Firebase 控制台設定。`);
       }
     } finally {
       setIsLoading(false);
