@@ -26,7 +26,7 @@ service cloud.firestore {
 
     // Users Collection rules
     match /users/{userId} {
-      allow get: if isSignedIn() && (request.auth.uid == userId || resource.data.partnerUid == request.auth.uid);
+      allow get: if isSignedIn() && (request.auth.uid == userId || resource.data.get('partnerUid', '') == request.auth.uid);
       allow list: if isSignedIn() && request.auth.uid == userId;
 
       allow create: if isSignedIn() && (request.auth.uid == userId || userId == 'mock-partner-' + request.auth.uid) && isValidUser(incoming(), userId);
@@ -35,10 +35,10 @@ service cloud.firestore {
         // Case A: The user fully manages and updates their own mock-partner profile
         (userId == 'mock-partner-' + request.auth.uid && isValidUser(incoming(), userId)) ||
         // Case B: Symmetrical profile updates for the user's own profile or their paired partner's profile
-        ((request.auth.uid == userId || resource.data.partnerUid == request.auth.uid) && isValidUser(incoming(), userId) && (
-          incoming().diff(existing()).affectedKeys().hasOnly([
+        ((request.auth.uid == userId || resource.data.get('partnerUid', '') == request.auth.uid) && isValidUser(incoming(), userId) && (
+          [
             'partnerCode', 'partnerUid', 'partnerName', 'status', 'spaceId', 'updatedAt'
-          ])
+          ].hasAll(incoming().diff(existing()).affectedKeys())
         ))
       );
 
@@ -46,54 +46,54 @@ service cloud.firestore {
     }
 
     function isValidUser(data, userId) {
-      return (data.uid == userId)
-        && data.displayName is string && data.displayName.size() <= 128
-        && data.email is string && data.email.size() <= 128
-        && data.myCode is string && data.myCode.size() <= 32
-        && data.status in ['unbound', 'binding', 'bound']
-        && (data.partnerCode == null || (data.partnerCode is string && data.partnerCode.size() <= 32))
-        && (data.partnerUid == null || (data.partnerUid is string && data.partnerUid.size() <= 128))
-        && (data.partnerName == null || (data.partnerName is string && data.partnerName.size() <= 128))
-        && (data.spaceId == null || (data.spaceId is string && data.spaceId.size() <= 128));
+      return (data.get('uid', '') == userId)
+        && data.get('displayName', '') is string && data.get('displayName', '').size() <= 128
+        && data.get('email', '') is string && data.get('email', '').size() <= 128
+        && data.get('myCode', '') is string && data.get('myCode', '').size() <= 32
+        && data.get('status', 'unbound') in ['unbound', 'binding', 'bound']
+        && (data.get('partnerCode', null) == null || (data.get('partnerCode', '') is string && data.get('partnerCode', '').size() <= 32))
+        && (data.get('partnerUid', null) == null || (data.get('partnerUid', '') is string && data.get('partnerUid', '').size() <= 128))
+        && (data.get('partnerName', null) == null || (data.get('partnerName', '') is string && data.get('partnerName', '').size() <= 128))
+        && (data.get('spaceId', null) == null || (data.get('spaceId', '') is string && data.get('spaceId', '').size() <= 128));
     }
 
     // Expenses Collection rules
     match /expenses/{expenseId} {
-      allow get: if isSignedIn() && (request.auth.uid in resource.data.participants);
-      allow list: if isSignedIn() && (request.auth.uid in resource.data.participants);
+      allow get: if isSignedIn() && (request.auth.uid in resource.data.get('participants', []));
+      allow list: if isSignedIn() && (request.auth.uid in resource.data.get('participants', []));
 
       allow create: if isSignedIn() 
         && isValidExpense(incoming()) 
-        && (incoming().payerId == request.auth.uid || request.auth.uid in incoming().participants);
+        && (incoming().get('payerId', '') == request.auth.uid || request.auth.uid in incoming().get('participants', []));
 
       allow update: if isSignedIn()
         && isValidExpense(incoming())
-        && (request.auth.uid in existing().participants)
+        && (request.auth.uid in existing().get('participants', []))
         && (
-          incoming().diff(existing()).affectedKeys().hasOnly([
+          [
             'category', 'amount', 'payerName', 'payerId', 'date', 'note',
             'splitType', 'fullBearerId', 'fullBearerName', 'customShares', 'updatedAt',
             'spaceId', 'participants'
-          ])
+          ].hasAll(incoming().diff(existing()).affectedKeys())
         );
 
-      allow delete: if isSignedIn() && (request.auth.uid in existing().participants);
+      allow delete: if isSignedIn() && (request.auth.uid in existing().get('participants', []));
     }
 
     function isValidExpense(data) {
-      return data.id is string && data.id.size() <= 128
-        && data.spaceId is string && data.spaceId.size() <= 128
-        && data.category is string && data.category.size() <= 64
-        && data.amount is number && data.amount >= 0
-        && data.payerId is string && data.payerId.size() <= 128
-        && data.payerName is string && data.payerName.size() <= 128
-        && data.date is string && data.date.size() <= 16
-        && data.note is string && data.note.size() <= 200
-        && data.splitType in ['50/50', 'single', 'custom']
-        && (data.fullBearerId == null || (data.fullBearerId is string && data.fullBearerId.size() <= 128))
-        && (data.fullBearerName == null || (data.fullBearerName is string && data.fullBearerName.size() <= 128))
-        && data.participants is list && data.participants.size() >= 1 && data.participants.size() <= 2
-        && request.auth.uid in data.participants;
+      return data.get('id', '') is string && data.get('id', '').size() <= 128
+        && data.get('spaceId', '') is string && data.get('spaceId', '').size() <= 128
+        && data.get('category', '') is string && data.get('category', '').size() <= 64
+        && data.get('amount', 0) is number && data.get('amount', 0) >= 0
+        && data.get('payerId', '') is string && data.get('payerId', '').size() <= 128
+        && data.get('payerName', '') is string && data.get('payerName', '').size() <= 128
+        && data.get('date', '') is string && data.get('date', '').size() <= 16
+        && data.get('note', '') is string && data.get('note', '').size() <= 200
+        && data.get('splitType', '50/50') in ['50/50', 'single', 'custom']
+        && (data.get('fullBearerId', null) == null || (data.get('fullBearerId', '') is string && data.get('fullBearerId', '').size() <= 128))
+        && (data.get('fullBearerName', null) == null || (data.get('fullBearerName', '') is string && data.get('fullBearerName', '').size() <= 128))
+        && data.get('participants', []) is list && data.get('participants', []).size() >= 1 && data.get('participants', []).size() <= 2
+        && request.auth.uid in data.get('participants', []);
     }
 
   }
