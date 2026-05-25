@@ -35,10 +35,11 @@ service cloud.firestore {
         // Case A: The user fully manages and updates their own mock-partner profile
         (userId == 'mock-partner-' + request.auth.uid && isValidUser(incoming(), userId)) ||
         // Case B: Symmetrical profile updates for the user's own profile or their paired partner's profile
-        ((request.auth.uid == userId || resource.data.get('partnerUid', '') == request.auth.uid) && isValidUser(incoming(), userId) && (
+        ((request.auth.uid == userId || resource.data.get('partnerUid', '') == request.auth.uid) && (
           [
             'partnerCode', 'partnerUid', 'partnerName', 'status', 'spaceId', 'updatedAt'
           ].hasAll(incoming().diff(existing()).affectedKeys())
+          && (incoming().get('status', 'unbound') in ['unbound', 'binding', 'bound'])
         ))
       );
 
