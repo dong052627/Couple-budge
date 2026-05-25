@@ -110,7 +110,6 @@ export async function logoutUser() {
   await signOut(auth);
 }
 
-// 3. Setup and Sync User Identity
 export interface UserProfile {
   uid: string;
   displayName: string;
@@ -122,6 +121,7 @@ export interface UserProfile {
   partnerName: string;
   status: 'unbound' | 'binding' | 'bound';
   spaceId: string;
+  transferredAmount?: number;
 }
 
 // Helper: generate 6 chars code of structure LOVE-XXXX
@@ -157,6 +157,7 @@ export async function ensureUserProfileExists(user: User): Promise<UserProfile> 
       partnerName: '',
       status: 'unbound',
       spaceId: '',
+      transferredAmount: 0,
     };
 
     await setDoc(userRef, {
@@ -453,6 +454,7 @@ export async function setupMockPartner(currentUserProfile: UserProfile): Promise
       partnerName: currentUserProfile.displayName,
       status: 'bound',
       spaceId: symmetricSpaceId,
+      transferredAmount: 0,
     };
 
     await setDoc(mockRef, {
@@ -468,6 +470,7 @@ export async function setupMockPartner(currentUserProfile: UserProfile): Promise
       partnerName: '小可 (測試伴侶)',
       status: 'bound',
       spaceId: symmetricSpaceId,
+      transferredAmount: 0,
       updatedAt: serverTimestamp(),
     });
 
@@ -475,6 +478,40 @@ export async function setupMockPartner(currentUserProfile: UserProfile): Promise
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `users/${mockUid}`);
     return { success: false, message: '建立模擬伴侶時發生錯誤：' + (error instanceof Error ? error.message : String(error)) };
+  }
+}
+
+// 10. Update transferred/handed over amount for active space
+export async function updateTransferredAmount(
+  currentUserProfile: UserProfile,
+  amount: number
+): Promise<void> {
+  const myUid = currentUserProfile.uid;
+  const partnerUid = currentUserProfile.partnerUid;
+
+  try {
+    // 1. Update my own profile
+    const myRef = doc(db, 'users', myUid);
+    await updateDoc(myRef, {
+      transferredAmount: amount,
+      updatedAt: serverTimestamp(),
+    });
+
+    // 2. Symmetrically update partner profile if bound
+    if (partnerUid) {
+      const partnerRef = doc(db, 'users', partnerUid);
+      try {
+        await updateDoc(partnerRef, {
+          transferredAmount: amount,
+          updatedAt: serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn('Partner document transfer amount update skipped or failed: ', err);
+      }
+    }
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `users/${myUid}`);
+    throw error;
   }
 }
 

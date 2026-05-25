@@ -30,12 +30,30 @@ service cloud.firestore {
       
       // 3. Users can only update their own profile, their mock partner, or their paired partner's profile symmetrically
       allow update: if isSignedIn() && (
+        // A. Full access to update their own profile or their mock sandbox partner
         request.auth.uid == userId || 
         userId == 'mock-partner-' + request.auth.uid || 
-        resource.data.get('partnerUid', '') == request.auth.uid
+        // B. Restricted access to update partner's profile symmetrically
+        (
+          (resource.data.get('partnerUid', '') == request.auth.uid ||
+           resource.data.get('uid', '') == 'mock-partner-' + request.auth.uid)
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'partnerCode', 'partnerUid', 'partnerName', 'status', 'spaceId', 'updatedAt', 'transferredAmount'
+          ])
+          && (incoming().get('status', 'unbound') in ['unbound', 'binding', 'bound'])
+        )
       );
 
       allow delete: if false; // Profiles are immortal
+    }
+
+    function isValidUser(data, userId) {
+      return (data.get('uid', userId) == userId)
+        && (data.get('status', 'unbound') in ['unbound', 'binding', 'bound'])
+        && (data.get('partnerCode', '') is string)
+        && (data.get('partnerUid', '') is string)
+        && (data.get('partnerName', '') is string)
+        && (data.get('spaceId', '') is string);
     }
 
     // Expenses Collection rules
