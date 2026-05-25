@@ -46,15 +46,12 @@ service cloud.firestore {
     }
 
     function isValidUser(data, userId) {
-      return (data.get('uid', '') == userId)
-        && data.get('displayName', '') is string && data.get('displayName', '').size() <= 128
-        && data.get('email', '') is string && data.get('email', '').size() <= 128
-        && data.get('myCode', '') is string && data.get('myCode', '').size() <= 32
-        && data.get('status', 'unbound') in ['unbound', 'binding', 'bound']
-        && (data.get('partnerCode', null) == null || (data.get('partnerCode', '') is string && data.get('partnerCode', '').size() <= 32))
-        && (data.get('partnerUid', null) == null || (data.get('partnerUid', '') is string && data.get('partnerUid', '').size() <= 128))
-        && (data.get('partnerName', null) == null || (data.get('partnerName', '') is string && data.get('partnerName', '').size() <= 128))
-        && (data.get('spaceId', null) == null || (data.get('spaceId', '') is string && data.get('spaceId', '').size() <= 128));
+      return (data.get('uid', userId) == userId)
+        && (data.get('status', 'unbound') in ['unbound', 'binding', 'bound'])
+        && (data.get('partnerCode', '') is string)
+        && (data.get('partnerUid', '') is string)
+        && (data.get('partnerName', '') is string)
+        && (data.get('spaceId', '') is string);
     }
 
     // Expenses Collection rules
@@ -81,18 +78,16 @@ service cloud.firestore {
     }
 
     function isValidExpense(data) {
-      return data.get('id', '') is string && data.get('id', '').size() <= 128
-        && data.get('spaceId', '') is string && data.get('spaceId', '').size() <= 128
-        && data.get('category', '') is string && data.get('category', '').size() <= 64
+      return data.get('id', '') is string
+        && data.get('spaceId', '') is string
+        && data.get('category', '') is string
         && data.get('amount', 0) is number && data.get('amount', 0) >= 0
-        && data.get('payerId', '') is string && data.get('payerId', '').size() <= 128
-        && data.get('payerName', '') is string && data.get('payerName', '').size() <= 128
-        && data.get('date', '') is string && data.get('date', '').size() <= 16
-        && data.get('note', '') is string && data.get('note', '').size() <= 200
+        && data.get('payerId', '') is string
+        && data.get('payerName', '') is string
+        && data.get('date', '') is string
+        && data.get('note', '') is string
         && data.get('splitType', '50/50') in ['50/50', 'single', 'custom']
-        && (data.get('fullBearerId', null) == null || (data.get('fullBearerId', '') is string && data.get('fullBearerId', '').size() <= 128))
-        && (data.get('fullBearerName', null) == null || (data.get('fullBearerName', '') is string && data.get('fullBearerName', '').size() <= 128))
-        && data.get('participants', []) is list && data.get('participants', []).size() >= 1 && data.get('participants', []).size() <= 2
+        && data.get('participants', []) is list
         && request.auth.uid in data.get('participants', []);
     }
 
