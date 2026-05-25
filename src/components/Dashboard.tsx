@@ -83,7 +83,7 @@ export default function Dashboard({ expenses, currentUserProfile, onSelectExpens
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-5 space-y-6 pb-24">
+    <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5 pb-24 select-none">
 
       {/* Toast Alert */}
       {toastMessage && (
@@ -93,122 +93,114 @@ export default function Dashboard({ expenses, currentUserProfile, onSelectExpens
         </div>
       )}
 
-      {/* Hero Welcome Message */}
-      <div className="bg-gradient-to-r from-indigo-50 to-indigo-100/50 rounded-2xl p-4 flex items-center justify-between border border-indigo-100">
-        <div className="space-y-1 block">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>5 月生活手札已開啟</span>
-          </div>
-          <p className="text-xs text-slate-500 leading-normal">
-            本月兩人已共同記帳 <span className="font-bold text-slate-800">{expenses.length}</span> 筆費用，攜手向前！
-          </p>
-        </div>
-        <div className="bg-white p-2 text-indigo-500 rounded-xl shadow-xs shrink-0 flex items-center justify-center">
-          <Award className="w-5 h-5" />
+      {/* 頂部精緻小提示 */}
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-450 uppercase tracking-widest">
+          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+          <span>5月生活手札 • 共同記帳 {expenses.length} 筆</span>
         </div>
       </div>
 
-      {/* 1. 本月共同支出總額卡片 */}
-      <section className="bg-indigo-600 rounded-3xl p-6 text-white shadow-lg shadow-indigo-100 relative overflow-hidden transition-all hover:scale-[1.01]">
-        <div className="absolute -right-6 -bottom-6 opacity-8">
-          <Coins className="w-36 h-36 text-indigo-550" />
-        </div>
-        <span className="text-[10px] font-bold opacity-80 uppercase tracking-widest block mb-1">本月共同支出總額</span>
-        <div className="text-3xl font-black mt-1 flex items-baseline gap-1.5 leading-none">
-          <span>NT$ {stats.totalExpense.toLocaleString()}</span>
-          <span className="text-sm font-normal opacity-70">TWD</span>
+      {/* 1. 共同財務概覽黃金大卡片 */}
+      <section className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 rounded-3xl p-6 text-white shadow-xl shadow-indigo-950/20 relative overflow-hidden transition-all hover:scale-[1.002]">
+        {/* Background Decorative Coins */}
+        <div className="absolute -right-8 -bottom-8 opacity-5 select-none pointer-events-none">
+          <Coins className="w-40 h-40 text-white" />
         </div>
 
-        <div className="mt-8 space-y-2">
-          <div className="flex justify-between text-[10px] font-bold">
-            <span className="text-blue-200">{nameA}消費占比 ({pctA.toFixed(0)}%)</span>
-            <span className="text-pink-200">{nameB}消費占比 ({pctB.toFixed(0)}%)</span>
-          </div>
-          <div className="w-full h-2 bg-indigo-800 rounded-full overflow-hidden flex">
-            {/* 阿明佔比 */}
-            <div
-              className="bg-blue-400 h-full transition-all duration-500"
-              style={{ width: `${pctA}%` }}
-            ></div>
-            {/* 小美佔比 */}
-            <div
-              className="bg-pink-400 h-full transition-all duration-500"
-              style={{ width: `${pctB}%` }}
-            ></div>
+        {/* Card Header: Total Expenditure */}
+        <div className="space-y-1">
+          <span className="text-[10px] font-bold opacity-60 uppercase tracking-widest block">本月共同支出總額</span>
+          <div className="text-3xl font-black flex items-baseline gap-1.5 leading-none">
+            <span>NT$ {stats.totalExpense.toLocaleString()}</span>
+            <span className="text-xs font-normal opacity-50">TWD</span>
           </div>
         </div>
-      </section>
 
-      {/* 2. 兩人已付款統計與分攤狀態 */}
-      <section className="grid grid-cols-2 gap-3">
-        {/* 阿明卡片 */}
-        <div className="border border-slate-100 bg-white p-3.5 rounded-2xl transition-all hover:border-slate-200">
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="w-2 h-2 rounded-full bg-blue-500 shadow-sm"></span>
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{nameA}已付</span>
+        {/* Splitting Ratio Progress Bar */}
+        <div className="mt-5 space-y-1.5">
+          <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden flex">
+            <div className="bg-blue-400 h-full transition-all duration-500" style={{ width: `${pctA}%` }}></div>
+            <div className="bg-pink-400 h-full transition-all duration-500" style={{ width: `${pctB}%` }}></div>
           </div>
-          <div className="text-lg font-bold text-slate-800">NT$ {stats.paidA.toLocaleString()}</div>
+          <div className="flex justify-between text-[9px] font-bold text-slate-400">
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+              {nameA}負擔占比 ({pctA.toFixed(0)}%)
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-pink-400"></span>
+              {nameB}負擔占比 ({pctB.toFixed(0)}%)
+            </span>
+          </div>
         </div>
 
-        {/* 小美卡片 */}
-        <div className="border border-slate-100 bg-white p-3.5 rounded-2xl transition-all hover:border-slate-200">
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="w-2 h-2 rounded-full bg-pink-500 shadow-sm"></span>
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{nameB}已付</span>
+        <div className="h-[1px] bg-slate-800/60 my-4"></div>
+
+        {/* Grid: Individual Paid Stats */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-0.5">
+            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">{nameA}已付</span>
+            <div className="text-base font-bold text-slate-100">NT$ {stats.paidA.toLocaleString()}</div>
           </div>
-          <div className="text-lg font-bold text-slate-800">NT$ {stats.paidB.toLocaleString()}</div>
+          <div className="space-y-0.5 border-l border-slate-800/60 pl-4">
+            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">{nameB}已付</span>
+            <div className="text-base font-bold text-slate-100">NT$ {stats.paidB.toLocaleString()}</div>
+          </div>
         </div>
 
-        {/* 結算提示欄 */}
-        <div className="col-span-2 bg-slate-900 text-white p-4 rounded-2xl flex flex-col gap-3 shadow-md">
+        <div className="h-[1px] bg-slate-800/60 my-4"></div>
+
+        {/* Settlement Status & Action Area */}
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] opacity-70 font-semibold tracking-wide uppercase">結算狀態</span>
+            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">結算狀態</span>
             <div className="text-xs font-bold text-indigo-300">
               {stats.debtor === 'none' ? (
-                <span>目前雙方無欠款，平帳中 ⚖️</span>
+                <span className="text-emerald-400">目前雙方無欠款，平帳中 ⚖️</span>
               ) : cloudTransferred <= 0 ? (
                 <span>{stats.debtor} 需給 {stats.creditor} NT$ {stats.debtAmount.toLocaleString()}</span>
               ) : cloudTransferred < stats.debtAmount ? (
-                <span>{stats.debtor} 需給 {stats.creditor} NT$ {(stats.debtAmount - cloudTransferred).toLocaleString()} <span className="text-[10px] text-slate-400 font-normal">(已轉交 NT$ {cloudTransferred.toLocaleString()})</span></span>
+                <span>{stats.debtor} 需給 {stats.creditor} NT$ {(stats.debtAmount - cloudTransferred).toLocaleString()} <span className="text-[9px] text-slate-400 font-normal">(已轉交 NT$ {cloudTransferred.toLocaleString()})</span></span>
               ) : (
-                <span>🎉 {stats.debtor} 已全額付清！ (已轉交 NT$ {cloudTransferred.toLocaleString()})</span>
+                <span className="text-emerald-400">🎉 {stats.debtor} 已全額付清！ (已轉交 NT$ {cloudTransferred.toLocaleString()})</span>
               )}
             </div>
           </div>
 
+          {/* Increment Input (Amount transferred this time) */}
           {stats.debtor !== 'none' && (
-            <div className="border-t border-slate-850 pt-2.5 flex items-center justify-between gap-2">
+            <div className="bg-slate-950/40 rounded-xl p-2.5 border border-slate-800/60 flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">本次手動轉交</span>
+                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">本次手動轉交</span>
                 {cloudTransferred > 0 && (
                   <button
                     onClick={handleClearTransferred}
                     disabled={isSavingTransferred}
-                    className="text-[9px] text-rose-400 hover:text-rose-300 font-medium hover:underline cursor-pointer shrink-0"
+                    className="text-[9px] text-rose-400 hover:text-rose-350 font-medium hover:underline cursor-pointer shrink-0 ml-1"
                     title="清除所有已轉交金額記錄"
                   >
-                    (清除記錄)
+                    (清除)
                   </button>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
-                  <span className="text-[10px] text-slate-500 font-bold">NT$</span>
+                <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-0.5 rounded-lg border border-slate-800">
+                  <span className="text-[9px] text-slate-500 font-bold">NT$</span>
                   <input
                     type="number"
                     min="0"
                     placeholder="0"
                     value={localIncrement || ''}
                     onChange={(e) => setLocalIncrement(Number(e.target.value))}
-                    className="w-16 bg-transparent text-white text-xs font-extrabold focus:outline-none text-right placeholder:text-slate-700 font-mono"
+                    className="w-14 bg-transparent text-white text-xs font-extrabold focus:outline-none text-right placeholder:text-slate-700 font-mono"
                   />
                 </div>
                 {localIncrement > 0 && (
                   <button
                     onClick={handleSaveTransferred}
                     disabled={isSavingTransferred}
-                    className="bg-indigo-650 hover:bg-indigo-550 disabled:opacity-50 text-[10px] font-black text-white px-3 py-1 rounded-lg transition-all active:scale-95 cursor-pointer shrink-0"
+                    className="bg-indigo-650 hover:bg-indigo-550 disabled:opacity-50 text-[9px] font-black text-white px-2 py-1 rounded-lg transition-all active:scale-95 cursor-pointer shrink-0"
                   >
                     {isSavingTransferred ? '儲存中...' : '確認'}
                   </button>
@@ -217,27 +209,27 @@ export default function Dashboard({ expenses, currentUserProfile, onSelectExpens
             </div>
           )}
 
-          {/* COLLAPSIBLE MATHEMATICAL EXPLANATION */}
-          <div className="border-t border-slate-800 pt-2 shrink-0">
+          {/* Collapsible Math details inside the card */}
+          <div className="pt-1">
             <button
               onClick={() => setShowMath(!showMath)}
-              className="w-full flex items-center justify-between text-[10px] font-bold text-slate-400 hover:text-white focus:outline-none py-0.5"
+              className="w-full flex items-center justify-between text-[9px] font-bold text-slate-400 hover:text-white focus:outline-none py-0.5"
             >
               <span>查看結算公式與統計細節</span>
               {showMath ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
 
             {showMath && (
-              <div className="mt-2.5 text-[10px] text-slate-300 bg-slate-950/80 rounded-xl p-3 space-y-2 border border-slate-800/80 animate-fade-in-down leading-relaxed">
+              <div className="mt-2 text-[9px] text-slate-300 bg-slate-950/60 rounded-xl p-3 space-y-2 border border-slate-800/40 animate-fade-in-down leading-relaxed">
                 <div className="flex justify-between">
                   <span className="font-semibold text-slate-400">本月兩人共同總消費：</span>
                   <span className="font-bold text-white">NT$ {stats.totalExpense.toLocaleString()}</span>
                 </div>
-                <div className="h-[1px] bg-slate-800/80 my-1"></div>
+                <div className="h-[1px] bg-slate-800/40 my-1"></div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     <p className="font-bold text-blue-400 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      <span className="w-1 h-1 rounded-full bg-blue-500"></span>
                       {nameA}細目：
                     </p>
                     <p className="text-slate-400">已付付款：NT$ {stats.paidA.toLocaleString()}</p>
@@ -250,9 +242,9 @@ export default function Dashboard({ expenses, currentUserProfile, onSelectExpens
                       <p className="text-rose-400 font-bold">已收轉交：-NT$ {cloudTransferred.toLocaleString()}</p>
                     )}
                   </div>
-                  <div className="space-y-1 border-l border-slate-800 pl-2">
+                  <div className="space-y-0.5 border-l border-slate-800 pl-2">
                     <p className="font-bold text-pink-400 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-pink-500"></span>
+                      <span className="w-1 h-1 rounded-full bg-pink-500"></span>
                       {nameB}細目：
                     </p>
                     <p className="text-slate-400">已付付款：NT$ {stats.paidB.toLocaleString()}</p>
@@ -270,10 +262,10 @@ export default function Dashboard({ expenses, currentUserProfile, onSelectExpens
                 {/* 抵銷情況說明 */}
                 {stats.debtor !== 'none' && (
                   <>
-                    <div className="h-[1px] bg-slate-800/80 my-1"></div>
-                    <div className="space-y-1.5 leading-relaxed">
+                    <div className="h-[1px] bg-slate-800/40 my-1"></div>
+                    <div className="space-y-1 leading-relaxed">
                       <p className="font-bold text-indigo-300 flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-amber-400" />
+                        <Sparkles className="w-2.5 h-2.5 text-amber-400" />
                         <span>抵銷情況說明：</span>
                       </p>
                       <p className="text-slate-300 font-medium text-left">
@@ -289,8 +281,8 @@ export default function Dashboard({ expenses, currentUserProfile, onSelectExpens
                   </>
                 )}
 
-                <div className="h-[1px] bg-slate-800/80 my-1"></div>
-                <p className="text-[9px] text-slate-400 italic leading-relaxed">
+                <div className="h-[1px] bg-slate-800/40 my-1"></div>
+                <p className="text-[8px] text-slate-400 italic leading-relaxed">
                   說明：此處系統分析每筆消費的分攤設定，計算每個人『付了多少』與『應該分攤多少』所得出的對沖結果。
                 </p>
               </div>
@@ -299,30 +291,30 @@ export default function Dashboard({ expenses, currentUserProfile, onSelectExpens
         </div>
       </section>
 
-      {/* 3. 最近 10 筆紀錄 */}
-      <section className="space-y-3 pt-1">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-            <span className="w-4 h-px bg-slate-300"></span>
+      {/* 2. 最近 10 筆紀錄 */}
+      <section className="space-y-2.5 pt-1.5">
+        <div className="flex justify-between items-center px-1">
+          <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+            <span className="w-3.5 h-px bg-slate-350"></span>
             最近 10 筆紀錄
           </h3>
           <button
             onClick={() => onNavigateTo('list')}
-            className="text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100/60 px-3 py-1 rounded-lg transition-colors cursor-pointer"
+            className="text-[9px] font-black text-indigo-650 bg-indigo-50/70 hover:bg-indigo-100/60 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
           >
             查看全部
           </button>
         </div>
 
-        {/* List of items */}
-        <div className="space-y-2 pb-1">
+        {/* List of items inside a premium borderless unified card */}
+        <div className="bg-white rounded-3xl border border-slate-100/80 shadow-xs divide-y divide-slate-50 px-2 py-1">
           {expenses.slice(0, 10).map((item) => {
             const config = CATEGORY_CONFIG[item.category] || CATEGORY_CONFIG['其他'];
             return (
               <div
                 key={item.id}
                 onClick={() => onSelectExpense(item)}
-                className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100/60 rounded-2xl hover:border-indigo-100/60 hover:bg-slate-100/30 active:scale-99 transition-all cursor-pointer group"
+                className="flex items-center justify-between py-3.5 px-3 hover:bg-slate-50/50 active:scale-[0.995] transition-all cursor-pointer group rounded-2xl"
               >
                 <div className="flex items-center gap-3">
                   {/* Category icon block (Rounded-xl) */}
@@ -332,11 +324,11 @@ export default function Dashboard({ expenses, currentUserProfile, onSelectExpens
                   <div className="space-y-0.5">
                     <p className="text-xs font-bold text-slate-800">{item.note || item.category}</p>
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[9px] text-slate-400 font-medium">{item.date}</span>
-                      <span className="text-[9px] text-slate-300">•</span>
-                      <span className={`text-[9.5px] font-bold px-2 py-0.2 rounded-full ${item.payer === nameA
-                          ? 'bg-blue-100/70 text-blue-700'
-                          : 'bg-pink-100/70 text-pink-700'
+                      <span className="text-[9px] text-slate-400 font-medium font-mono">{item.date}</span>
+                      <span className="text-[9px] text-slate-350 font-medium">•</span>
+                      <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-md ${item.payer === nameA
+                          ? 'bg-blue-50 text-blue-650'
+                          : 'bg-pink-50 text-pink-650'
                         }`}>
                         {item.payer}付款
                       </span>
@@ -344,7 +336,7 @@ export default function Dashboard({ expenses, currentUserProfile, onSelectExpens
                   </div>
                 </div>
                 <div className="text-right space-y-0.5">
-                  <p className="text-xs font-black text-slate-800">
+                  <p className="text-xs font-black text-slate-800 font-mono">
                     NT$ {item.amount.toLocaleString()}
                   </p>
                   <p className="text-[9px] font-bold tracking-widest uppercase text-slate-400 shrink-0">
@@ -358,11 +350,11 @@ export default function Dashboard({ expenses, currentUserProfile, onSelectExpens
       </section>
 
       {/* Decorative Bottom tip */}
-      <div className="bg-slate-50 border border-slate-100/60 rounded-2xl p-4 flex items-start gap-3">
+      <div className="bg-slate-50/60 border border-slate-100/40 rounded-2xl p-4 flex items-start gap-3">
         <div className="p-1 text-slate-400 shrink-0">
-          <CircleAlert className="w-4 h-4" />
+          <CircleAlert className="w-4 h-4 text-slate-450" />
         </div>
-        <p className="text-[10px] text-slate-500 leading-normal">
+        <p className="text-[9px] text-slate-400 leading-normal font-medium">
           共同記帳小知識：大筆支出（如：房租、水電費）由一人墊付後，系統可在此對沖計算。週年禮物等由一方全額贈送的禮品更可以用備用分攤獨立計算、不歸入情侶均分負擔哦！
         </p>
       </div>
