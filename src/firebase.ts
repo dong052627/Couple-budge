@@ -119,7 +119,7 @@ export interface UserProfile {
   partnerCode: string;
   partnerUid: string;
   partnerName: string;
-  status: 'unbound' | 'binding' | 'bound';
+  status: 'unbound' | 'binding' | 'bound' | 'individual';
   spaceId: string;
   transferredAmount?: number;
   archivedSpaces?: {
@@ -410,13 +410,14 @@ export async function unbindPartnerAndArchive(
   const archiveTime = new Date().toISOString();
 
   try {
+    // 1. Archive + reset my profile → switch to individual mode
     const myRef = doc(db, 'users', myUid);
     const updates: any = {
       partnerCode: '',
       partnerUid: '',
       partnerName: '',
-      status: 'unbound',
-      spaceId: '',
+      status: 'individual',  // keep using the app in solo mode
+      spaceId: myUid,        // personal space = own uid
       transferredAmount: 0,
       updatedAt: serverTimestamp(),
     };
@@ -485,6 +486,25 @@ export async function unbindPartnerAndArchive(
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `users/${myUid}`);
     return { success: false, message: '解除綁定與封存時發生錯誤：' + (error instanceof Error ? error.message : String(error)) };
+  }
+}
+
+// 8b. Enter individual mode directly (for new users who skip pairing)
+export async function enterIndividualMode(uid: string): Promise<void> {
+  const userRef = doc(db, 'users', uid);
+  try {
+    await updateDoc(userRef, {
+      status: 'individual',
+      spaceId: uid,
+      partnerCode: '',
+      partnerUid: '',
+      partnerName: '',
+      transferredAmount: 0,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `users/${uid}`);
+    throw error;
   }
 }
 

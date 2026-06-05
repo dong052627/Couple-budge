@@ -32,6 +32,7 @@ interface DashboardProps {
   selectedDate: string | null;
   setSelectedDate: (date: string | null) => void;
   isReadOnly?: boolean;
+  isIndividual?: boolean;
 }
 
 export default function Dashboard({
@@ -44,6 +45,7 @@ export default function Dashboard({
   selectedDate,
   setSelectedDate,
   isReadOnly = false,
+  isIndividual = false,
 }: DashboardProps) {
   const [showMath, setShowMath] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -280,7 +282,9 @@ export default function Dashboard({
 
         {/* Card Header: Total Expenditure */}
         <div className="space-y-1">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">本月共同支出總額</span>
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">
+            {isIndividual ? '我的個人支出統計' : '本月共同支出總額'}
+          </span>
           <div className="text-3xl font-black text-slate-800 flex items-baseline gap-1.5 leading-none">
             <span>NT$ {stats.totalExpense.toLocaleString()}</span>
             <span className="text-xs font-normal text-slate-400">TWD</span>
@@ -290,21 +294,28 @@ export default function Dashboard({
         <div className="h-[1px] bg-slate-200/50 my-4"></div>
 
         {/* Grid: Individual Paid Stats */}
-        <div className="grid grid-cols-2 gap-4">
+        {isIndividual ? (
           <div className="space-y-0.5">
             <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">{nameA}支出金額</span>
             <div className="text-base font-extrabold text-blue-600">NT$ {stats.paidA.toLocaleString()}</div>
           </div>
-          <div className="space-y-0.5 border-l border-slate-200/50 pl-4">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">{nameB}支出金額</span>
-            <div className="text-base font-extrabold text-pink-600">NT$ {stats.paidB.toLocaleString()}</div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-0.5">
+              <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">{nameA}支出金額</span>
+              <div className="text-base font-extrabold text-blue-600">NT$ {stats.paidA.toLocaleString()}</div>
+            </div>
+            <div className="space-y-0.5 border-l border-slate-200/50 pl-4">
+              <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">{nameB}支出金額</span>
+              <div className="text-base font-extrabold text-pink-600">NT$ {stats.paidB.toLocaleString()}</div>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="h-[1px] bg-slate-200/50 my-4"></div>
 
-        {/* Settlement Status & Action Area */}
-        <div className="space-y-3">
+        {/* Settlement Status & Action Area - hidden in individual mode */}
+        {!isIndividual && (<div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">結算狀態</span>
             <div className="text-xs font-black text-indigo-650">
@@ -451,7 +462,7 @@ export default function Dashboard({
               </div>
             )}
           </div>
-        </div>
+        </div>)}
       </section>
 
       {/* 2. 最近 10 筆紀錄 / 日期過濾紀錄 */}

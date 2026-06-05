@@ -8,6 +8,7 @@ interface AddExpenseFormProps {
   currentUserProfile: any;
   onAddExpense: (newExpense: any) => void;
   onCancel: () => void;
+  isIndividual?: boolean;
 }
 
 const CATEGORY_LIST: CategoryType[] = [
@@ -23,7 +24,7 @@ const CATEGORY_LIST: CategoryType[] = [
   '其他',
 ];
 
-export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCancel }: AddExpenseFormProps) {
+export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCancel, isIndividual = false }: AddExpenseFormProps) {
   const nameA = currentUserProfile?.displayName || '我';
   const nameB = currentUserProfile?.partnerName || '另一半';
 
@@ -128,7 +129,7 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
         <div>
           <h2 className="text-sm font-black tracking-widest text-slate-400 uppercase flex items-center gap-1">
             <span className="w-3 h-px bg-slate-300"></span>
-            新增此筆共同支出
+            {isIndividual ? '新增個人支出記錄' : '新增此筆共同支出'}
           </h2>
         </div>
       </div>
@@ -210,9 +211,10 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
         </div>
 
         {/* 3. Payer and Note Row */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className={isIndividual ? '' : 'grid grid-cols-2 gap-4'}>
 
-          {/* Payer Selector */}
+          {/* Payer Selector - hidden in individual mode */}
+          {!isIndividual && (
           <div className="space-y-2">
             <label className="text-xs font-bold text-slate-500 block">
               誰代墊付款？ <span className="text-rose-500">*</span>
@@ -242,6 +244,7 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
               </button>
             </div>
           </div>
+          )}
 
           {/* Note Input */}
           <div className="space-y-2">
@@ -259,7 +262,8 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
 
         </div>
 
-        {/* 4. Split Method Container */}
+        {/* 4. Split Method Container - hidden in individual mode */}
+        {!isIndividual && (
         <div className="bg-slate-50 border border-slate-100 rounded-3xl p-5 space-y-4 shadow-2xs">
 
           <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/50">
@@ -420,6 +424,7 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
           </div>
 
         </div>
+        )}
 
         {/* 5. Trigger Buttons */}
         <div className="grid grid-cols-2 gap-3.5 pt-2">

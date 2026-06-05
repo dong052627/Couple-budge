@@ -39,7 +39,8 @@ import {
   createFirestoreExpense,
   deleteFirestoreExpense,
   mergeUnboundExpenses,
-  updateUserInfo
+  updateUserInfo,
+  enterIndividualMode
 } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -362,14 +363,27 @@ export default function App() {
   const handleLogout = async () => {
     try {
       await logoutUser();
-      triggerToast('🚪 帳號已安全儲存登出。');
+      triggerToast('🚶 帳號已安全儲存登出。');
     } catch (error) {
       console.error(error);
     }
   };
 
+  const handleEnterIndividual = async () => {
+    if (!currentUserProfile) return;
+    try {
+      await enterIndividualMode(currentUserProfile.uid);
+      triggerToast('📔 已進入個人記帳模式！');
+    } catch (err) {
+      console.error(err);
+      triggerToast('無法切換至個人模式，請重試。');
+    }
+  };
+
   // Check if fully paired in real-time
   const isBound = currentUserProfile?.status === 'bound';
+  const isIndividual = currentUserProfile?.status === 'individual';
+  const showMainApp = isBound || isIndividual;
 
   // Archived space switcher helpers
   const archivedSpaces = currentUserProfile?.archivedSpaces || [];
@@ -386,7 +400,7 @@ export default function App() {
       <div className="w-full max-w-md h-screen md:h-[860px] bg-white md:rounded-[44px] md:border-[10px] md:border-slate-900 flex flex-col relative md:shadow-2xl overflow-hidden transition-all duration-300">
         
         {/* Sidebar Settings Drawer Overlay */}
-        {currentUserProfile && isBound && (
+        {currentUserProfile && showMainApp && (
           <div
             className={`absolute inset-0 z-50 pointer-events-none transition-all duration-300 ${
               showDrawer ? 'opacity-100' : 'opacity-0'
@@ -618,8 +632,8 @@ export default function App() {
           </div>
         ) : (
           <>
-            {/* Header bar - only show if bound success */}
-            {currentUserProfile && isBound && (
+            {/* Header bar - only show when in main app */}
+            {currentUserProfile && showMainApp && (
               <header className="bg-white sticky top-0 z-20 px-6 py-1 flex justify-between items-center shrink-0 border-b border-slate-50 select-none">
                 <button
                   onClick={() => setShowDrawer(true)}
@@ -690,7 +704,7 @@ export default function App() {
                     triggerToast(`🔓 登入成功！歡迎。`);
                   }}
                 />
-              ) : !isBound ? (
+              ) : !showMainApp ? (
                 <HoldingBindingView
                   currentUserProfile={currentUserProfile}
                   onLogout={handleLogout}
@@ -699,6 +713,7 @@ export default function App() {
                   }}
                   triggerToast={triggerToast}
                   onExportCSV={handleExportCSV}
+                  onEnterIndividual={handleEnterIndividual}
                 />
               ) : (
                 <>
@@ -725,12 +740,14 @@ export default function App() {
                       selectedDate={selectedDate}
                       setSelectedDate={setSelectedDate}
                       isReadOnly={isReadOnlySpace}
+                      isIndividual={isIndividual}
                     />
                   )}
 
-                  {currentView === 'add' && (
+                  {currentView === 'add' && !isReadOnlySpace && (
                     <AddExpenseForm
                       currentUserProfile={currentUserProfile}
+                      isIndividual={isIndividual}
                       onAddExpense={async (newExpense) => {
                         try {
                           await createFirestoreExpense(
@@ -760,7 +777,7 @@ export default function App() {
             </main>
 
             {/* Navigation buttons */}
-            {currentUserProfile && isBound && !isReadOnlySpace && (
+            {currentUserProfile && showMainApp && !isReadOnlySpace && (
               <nav className="h-20 bg-white border-t border-slate-100/60 sticky bottom-0 z-30 flex justify-center items-center px-10 shrink-0 pb-4 select-none animate-fade-in-up">
                 {/* 新增支出 Centered Plus */}
                 <button

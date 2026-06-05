@@ -17,6 +17,7 @@ interface BindingViewProps {
   onSuccessBind: () => void;
   triggerToast: (msg: string) => void;
   onExportCSV: () => void;
+  onEnterIndividual?: () => void;
 }
 
 export default function BindingView({
@@ -25,6 +26,7 @@ export default function BindingView({
   onSuccessBind,
   triggerToast,
   onExportCSV,
+  onEnterIndividual,
 }: BindingViewProps) {
   const [partnerInput, setPartnerInput] = useState('');
   const [copied, setCopied] = useState(false);
@@ -215,6 +217,23 @@ export default function BindingView({
               '✨ 建立「模擬伴侶」並一鍵自動對齊綁定 ➔'
             )}
           </button>
+        </div>
+      )}
+
+      {/* Individual Mode Entry - for users without a partner */}
+      {currentStatusName === 'unbound' && onEnterIndividual && (
+        <div className="border-t border-slate-100 pt-4 space-y-2">
+          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center">或先不配對伴侶</p>
+          <button
+            type="button"
+            onClick={onEnterIndividual}
+            className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-extrabold border border-slate-700 rounded-xl text-[10px] tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
+          >
+            📔 進入個人記帳模式（單人使用）
+          </button>
+          <p className="text-[9px] text-slate-400 text-center leading-relaxed">
+            儲存個人帳目，未來隨時可再配對伴侶。
+          </p>
         </div>
       )}
 
