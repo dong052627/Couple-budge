@@ -44,8 +44,7 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
   const [note, setNote] = useState<string>('');
   
   // Split settings
-  const [splitType, setSplitType] = useState<SplitMethodType>('50/50');
-  const [bearer, setBearer] = useState<string>(nameA); // for 'single'
+  const [splitType, setSplitType] = useState<SplitMethodType>('single');
   const [shareA, setShareA] = useState<number>(50); // for 'custom' (A %)
   const [shareB, setShareB] = useState<number>(50); // for 'custom' (B %)
 
@@ -72,7 +71,7 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
     pShareA = numAmount / 2;
     pShareB = numAmount / 2;
   } else if (splitType === 'single') {
-    if (bearer === nameA) {
+    if (payer === nameA) {
       pShareA = numAmount;
       pShareB = 0;
     } else {
@@ -94,7 +93,7 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
 
     const splitDetail: SplitDetail = {
       type: splitType,
-      ...(splitType === 'single' && { fullBearer: bearer }),
+      ...(splitType === 'single' && { fullBearer: payer }),
       ...(splitType === 'custom' && {
         customShares: {
           [nameA]: shareA,
@@ -131,7 +130,6 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
             <span className="w-3 h-px bg-slate-300"></span>
             新增此筆共同支出
           </h2>
-          <p className="text-xs text-slate-505 mt-0.5">請詳細填寫下方欄位，系統將自動分沖對帳</p>
         </div>
       </div>
 
@@ -188,6 +186,7 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
                 placeholder="0"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
+                onWheel={(e) => e.currentTarget.blur()}
                 required
                 className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-100/80 rounded-2xl text-slate-800 font-extrabold text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100"
               />
@@ -215,7 +214,7 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
 
         {/* 3. Payer and Note Row */}
         <div className="grid grid-cols-2 gap-4">
-          
+
           {/* Payer Selector */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-slate-500 block">
@@ -277,17 +276,6 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
           <div className="grid grid-cols-3 gap-2 bg-slate-200/50 p-1 rounded-xl">
             <button
               type="button"
-              onClick={() => setSplitType('50/50')}
-              className={`py-1.5 px-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
-                splitType === '50/50'
-                  ? 'bg-white text-indigo-600 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              50/50 均分
-            </button>
-            <button
-              type="button"
               onClick={() => setSplitType('single')}
               className={`py-1.5 px-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
                 splitType === 'single'
@@ -299,11 +287,22 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
             </button>
             <button
               type="button"
+              onClick={() => setSplitType('50/50')}
+              className={`py-1.5 px-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                splitType === '50/50'
+                  ? 'bg-white text-indigo-600 shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              50/50 均分
+            </button>
+            <button
+              type="button"
               onClick={() => setSplitType('custom')}
               className={`py-1.5 px-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
                 splitType === 'custom'
                   ? 'bg-white text-indigo-600 shadow-2xs'
-                  : 'text-slate-505 hover:text-slate-700'
+                  : 'text-slate-500 hover:text-slate-700'
               }`}
             >
               自訂比例
@@ -328,44 +327,14 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
 
             {/* Single Bearer Panel */}
             {splitType === 'single' && (
-              <div className="space-y-3.5">
-                <div>
-                  <p className="text-[11px] font-bold text-slate-700 flex items-center gap-1 mb-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-800"></span>
-                    選擇由哪一方全額負擔此款金額？
-                  </p>
-                  <p className="text-[10px] text-slate-400">
-                    此消費計入共同帳內，但全部份額歸於下方的選擇人負擔（例如週年紀念品）。
-                  </p>
-                </div>
-                
-                {/* Bearer Select buttons */}
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setBearer(nameA)}
-                    className={`py-2 px-2 border rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                      bearer === nameA
-                        ? 'bg-blue-50 border-blue-500 text-blue-700'
-                        : 'bg-white border-slate-100 text-slate-400'
-                    }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${bearer === nameA ? 'bg-blue-500' : 'bg-slate-300'}`}></span>
-                    由 {nameA} 負擔全部
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setBearer(nameB)}
-                    className={`py-2 px-2 border rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                      bearer === nameB
-                        ? 'bg-pink-50 border-pink-500 text-pink-700'
-                        : 'bg-white border-slate-100 text-slate-400'
-                    }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${bearer === nameB ? 'bg-pink-500' : 'bg-slate-300'}`}></span>
-                    由 {nameB} 負擔全部
-                  </button>
-                </div>
+              <div className="space-y-1">
+                <p className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                  單人全額負擔 (100%)
+                </p>
+                <p className="text-[10px] text-slate-400 leading-normal">
+                  此消費由代墊人<strong>{payer}</strong>全額自付，雙方不進行分攤。
+                </p>
               </div>
             )}
 
@@ -411,6 +380,7 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
                         max="100"
                         value={shareA}
                         onChange={(e) => handleShareAChange(parseInt(e.target.value) || 0)}
+                        onWheel={(e) => e.currentTarget.blur()}
                         className="w-full px-2.5 py-1.5 bg-white border border-slate-100 rounded-xl text-xs text-blue-800 font-extrabold text-center focus:outline-none focus:border-blue-400"
                       />
                     </div>
@@ -422,6 +392,7 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
                         max="100"
                         value={shareB}
                         onChange={(e) => handleShareBChange(parseInt(e.target.value) || 0)}
+                        onWheel={(e) => e.currentTarget.blur()}
                         className="w-full px-2.5 py-1.5 bg-white border border-slate-100 rounded-xl text-xs text-pink-800 font-extrabold text-center focus:outline-none focus:border-pink-400"
                       />
                     </div>

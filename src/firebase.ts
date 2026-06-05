@@ -515,3 +515,40 @@ export async function updateTransferredAmount(
   }
 }
 
+// 11. Update user profile information (displayName and photoURL)
+export async function updateUserInfo(
+  currentUserProfile: UserProfile,
+  newName: string,
+  newPhotoURL: string
+): Promise<void> {
+  const myUid = currentUserProfile.uid;
+  const partnerUid = currentUserProfile.partnerUid;
+
+  try {
+    // 1. Update my own profile
+    const myRef = doc(db, 'users', myUid);
+    await updateDoc(myRef, {
+      displayName: newName,
+      photoURL: newPhotoURL,
+      updatedAt: serverTimestamp(),
+    });
+
+    // 2. Symmetrically update partner profile's partnerName if bound
+    if (partnerUid) {
+      const partnerRef = doc(db, 'users', partnerUid);
+      try {
+        await updateDoc(partnerRef, {
+          partnerName: newName,
+          updatedAt: serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn('Partner document partnerName update skipped or failed: ', err);
+      }
+    }
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `users/${myUid}`);
+    throw error;
+  }
+}
+
+

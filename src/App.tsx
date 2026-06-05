@@ -9,7 +9,16 @@ import {
   LayoutDashboard,
   ClipboardList,
   Sparkles,
-  LogOut
+  LogOut,
+  Menu,
+  X,
+  Settings,
+  User,
+  Save,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Calendar
 } from 'lucide-react';
 import { ExpenseItem, PayerType } from './types';
 import Dashboard from './components/Dashboard';
@@ -29,7 +38,8 @@ import {
   listenToExpenses,
   createFirestoreExpense,
   deleteFirestoreExpense,
-  mergeUnboundExpenses
+  mergeUnboundExpenses,
+  updateUserInfo
 } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -43,6 +53,42 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState('16:02');
   const [authLoading, setAuthLoading] = useState(true);
+
+  // Drawer and profile edit states
+  const [showDrawer, setShowDrawer] = useState(false);
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editPhotoURL, setEditPhotoURL] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Calendar states (lifted from Dashboard)
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (currentUserProfile) {
+      setEditName(currentUserProfile.displayName || '');
+      setEditPhotoURL(currentUserProfile.photoURL || '');
+    }
+  }, [currentUserProfile]);
+
+  const handleSaveProfile = async () => {
+    if (!editName.trim()) {
+      triggerToast("❌ 姓名不能為空喔！");
+      return;
+    }
+    setIsSavingProfile(true);
+    try {
+      await updateUserInfo(currentUserProfile!, editName.trim(), editPhotoURL);
+      triggerToast("✅ 個人設定已儲存更新！");
+      setShowDrawer(false);
+    } catch (err) {
+      console.error("Failed to update user profile info:", err);
+      triggerToast("❌ 儲存失敗，請重試");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   // 1. Listen to real Firebase Auth states
   useEffect(() => {
@@ -172,6 +218,198 @@ export default function App() {
       {/* Phone Mockup Frame */}
       <div className="w-full max-w-md h-screen md:h-[860px] bg-white md:rounded-[44px] md:border-[10px] md:border-slate-900 flex flex-col relative md:shadow-2xl overflow-hidden transition-all duration-300">
         
+        {/* Sidebar Settings Drawer Overlay */}
+        {currentUserProfile && isBound && (
+          <div
+            className={`absolute inset-0 z-50 pointer-events-none transition-all duration-300 ${
+              showDrawer ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            {/* Backdrop overlay */}
+            <div
+              onClick={() => setShowDrawer(false)}
+              className={`absolute inset-0 bg-slate-950/40 backdrop-blur-xs transition-opacity duration-300 ${
+                showDrawer ? 'opacity-100 pointer-events-auto' : 'opacity-0'
+              }`}
+            />
+
+            {/* Sidebar drawer container */}
+            <div
+              className={`absolute top-0 left-0 h-full w-[80%] max-w-[320px] bg-white flex flex-col shadow-2xl pointer-events-auto transition-transform duration-300 ease-out transform ${
+                showDrawer ? 'translate-x-0' : '-translate-x-full'
+              }`}
+            >
+              {/* Drawer Header */}
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+                <span className="text-xs font-black uppercase tracking-widest text-slate-400">詳細設定</span>
+                <button
+                  onClick={() => setShowDrawer(false)}
+                  className="p-1 hover:bg-slate-100 text-slate-400 hover:text-slate-650 rounded-lg transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Drawer Content */}
+              <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6">
+                
+                {/* 1. Profile Editing Card */}
+                <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4">
+                  <button
+                    onClick={() => setShowProfileSettings(!showProfileSettings)}
+                    className="w-full flex items-center justify-between text-left focus:outline-none cursor-pointer"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-indigo-505" />
+                      <span className="text-xs font-black text-slate-700">個人資訊設定</span>
+                    </div>
+                    {showProfileSettings ? (
+                      <ChevronUp className="w-4 h-4 text-slate-400" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-slate-400" />
+                    )}
+                  </button>
+
+                  {/* Collapsible Content Drawer */}
+                  {showProfileSettings && (
+                    <div className="mt-4 space-y-4 animate-fade-in-down">
+                      {/* Avatar Preview & Presets */}
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-bold text-slate-400 block uppercase">個人頭像選擇</label>
+                        <div className="flex items-center gap-4">
+                          {/* Avatar preview */}
+                          <div className="relative w-12 h-12 rounded-full overflow-hidden border border-slate-200 shrink-0">
+                            <img
+                              src={editPhotoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop'}
+                              alt="頭像預覽"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+
+                          {/* Presets Row */}
+                          <div className="flex items-center gap-1.5 overflow-x-auto py-1">
+                            {[
+                              'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=100&h=100&fit=crop', // Dog
+                              'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=100&h=100&fit=crop', // Cat
+                              'https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=100&h=100&fit=crop', // Fox
+                              'https://images.unsplash.com/photo-1589656966895-2f33e7653819?w=100&h=100&fit=crop', // Bear
+                              'https://images.unsplash.com/photo-1598153346810-860daa814c4b?w=100&h=100&fit=crop'  // Chick
+                            ].map((url, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => setEditPhotoURL(url)}
+                                className={`w-7 h-7 rounded-full overflow-hidden border transition-all cursor-pointer relative shrink-0 ${
+                                  editPhotoURL === url ? 'ring-2 ring-indigo-505 border-transparent' : 'border-slate-200 hover:scale-105'
+                                }`}
+                              >
+                                <img src={url} alt="preset" className="w-full h-full object-cover" />
+                                {editPhotoURL === url && (
+                                  <div className="absolute inset-0 bg-indigo-600/30 flex items-center justify-center">
+                                    <Check className="w-3 h-3 text-white stroke-[3]" />
+                                  </div>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Custom Image URL input */}
+                        <div className="space-y-1">
+                          <span className="text-[9px] text-slate-400 block">或貼上自訂頭像網址 (URL)：</span>
+                          <input
+                            type="text"
+                            value={editPhotoURL}
+                            onChange={(e) => setEditPhotoURL(e.target.value)}
+                            placeholder="請輸入頭像圖片網址"
+                            className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] focus:outline-none focus:border-indigo-400"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Name Input */}
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-400 block uppercase">個人姓名 / 暱稱</label>
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          placeholder="請輸入您的姓名"
+                          maxLength={12}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 font-bold focus:outline-none focus:border-indigo-500"
+                        />
+                      </div>
+
+                      {/* Save Button */}
+                      <button
+                        onClick={handleSaveProfile}
+                        disabled={isSavingProfile}
+                        className="w-full bg-indigo-650 hover:bg-indigo-600 disabled:opacity-50 text-white font-extrabold py-2 px-3 rounded-xl text-xs transition-all active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shadow-indigo-100"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        {isSavingProfile ? '儲存中...' : '儲存設定'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Menu Placeholders */}
+                <div className="space-y-2 pt-2">
+                  <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider pl-1">其他設定項目</span>
+                  
+                  <button
+                    onClick={() => {
+                      setCurrentView('binding');
+                      setShowDrawer(false);
+                    }}
+                    className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100/70 border border-slate-100 rounded-xl transition-all text-left group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2 text-slate-705">
+                      <Heart className="w-4 h-4 text-rose-500 fill-rose-100" />
+                      <span className="text-xs font-bold">伴侶與帳本連結</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400 group-hover:translate-x-0.5 transition-transform">→</span>
+                  </button>
+
+                  <div className="w-full flex items-center justify-between p-3 bg-slate-50/50 border border-slate-100 opacity-60 rounded-xl text-left cursor-not-allowed">
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <Settings className="w-4 h-4 text-slate-400" />
+                      <span className="text-xs font-medium">消費分類設定 (開發中)</span>
+                    </div>
+                  </div>
+
+                  <div className="w-full flex items-center justify-between p-3 bg-slate-50/50 border border-slate-100 opacity-60 rounded-xl text-left cursor-not-allowed">
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <ClipboardList className="w-4 h-4 text-slate-400" />
+                      <span className="text-xs font-medium">帳務報表匯出 (開發中)</span>
+                    </div>
+                  </div>
+
+                  {/* 登出帳號按鈕 */}
+                  <div className="pt-4 border-t border-slate-100/80">
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setShowDrawer(false);
+                      }}
+                      className="w-full flex items-center justify-center gap-2 p-2.5 bg-rose-50 hover:bg-rose-100/85 border border-rose-100/40 text-rose-650 rounded-xl transition-all font-extrabold text-xs cursor-pointer active:scale-98"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>登出帳號</span>
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Drawer Footer */}
+              <div className="p-5 border-t border-slate-100 bg-slate-50/40 text-center shrink-0">
+                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Together Ledger v1.0</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Notch */}
         <div className="hidden md:block absolute top-0 left-1/2 -translate-x-1/2 w-40 h-6 bg-slate-900 rounded-b-2xl z-40"></div>
 
@@ -209,29 +447,28 @@ export default function App() {
           <>
             {/* Header bar - only show if bound success */}
             {currentUserProfile && isBound && (
-              <header className="bg-white sticky top-0 z-20 px-6 py-5 flex justify-between items-center shrink-0 border-b border-slate-50 select-none">
-                <div>
-                  <h1 className="text-xl font-black tracking-tight text-slate-800 underline decoration-indigo-505 decoration-4 underline-offset-4">
-                    我們記帳吧！
-                  </h1>
-                  <p className="text-[10px] text-slate-400 mt-2 uppercase tracking-widest font-bold">
-                    Together Ledger • Joint Active
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100 shrink-0">
-                    <Heart className="w-4 h-4 text-rose-500 fill-current" />
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="p-2 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-full transition-colors cursor-pointer"
-                    title="登出帳號"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                </div>
+              <header className="bg-white sticky top-0 z-20 px-6 py-1 flex justify-between items-center shrink-0 border-b border-slate-50 select-none">
+                <button
+                  onClick={() => setShowDrawer(true)}
+                  className="p-2 hover:bg-slate-100 active:scale-95 text-slate-500 hover:text-slate-800 rounded-xl transition-all cursor-pointer focus:outline-none"
+                  aria-label="選單"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setShowCalendar(!showCalendar)}
+                  className={`p-2 hover:bg-slate-100 active:scale-95 rounded-xl transition-all cursor-pointer focus:outline-none ${
+                    showCalendar ? 'text-indigo-650 bg-indigo-50' : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                  aria-label="日曆"
+                  title={showCalendar ? '隱藏日曆' : '查看日曆'}
+                >
+                  <Calendar className="w-5 h-5" />
+                </button>
               </header>
             )}
+
+
 
             {/* Main view router switcher */}
             <main className="flex-1 overflow-y-auto flex flex-col bg-[#f8fafc] relative">
@@ -269,8 +506,13 @@ export default function App() {
                       currentUserProfile={currentUserProfile}
                       onSelectExpense={(item) => setSelectedExpense(item)}
                       onNavigateTo={(view) => handleNavigate(view as any)}
+                      showCalendar={showCalendar}
+                      setShowCalendar={setShowCalendar}
+                      selectedDate={selectedDate}
+                      setSelectedDate={setSelectedDate}
                     />
                   )}
+
                   {currentView === 'add' && (
                     <AddExpenseForm
                       currentUserProfile={currentUserProfile}
@@ -304,21 +546,7 @@ export default function App() {
 
             {/* Navigation buttons */}
             {currentUserProfile && isBound && (
-              <nav className="h-20 bg-white border-t border-slate-100/60 sticky bottom-0 z-30 flex justify-around items-center px-10 shrink-0 pb-4 select-none animate-fade-in-up">
-                
-                {/* 首頁 */}
-                <button
-                  onClick={() => handleNavigate('dashboard')}
-                  className={`flex flex-col items-center gap-1.5 transition-all outline-none cursor-pointer ${
-                    currentView === 'dashboard' ? 'text-indigo-600 scale-102' : 'text-slate-400 hover:text-slate-500'
-                  }`}
-                >
-                  <div className={`p-1 rounded-lg ${currentView === 'dashboard' ? 'bg-indigo-50' : ''}`}>
-                    <LayoutDashboard className="w-5 h-5" />
-                  </div>
-                  <span className="text-[10px] font-black tracking-wide uppercase">首頁</span>
-                </button>
-                
+              <nav className="h-20 bg-white border-t border-slate-100/60 sticky bottom-0 z-30 flex justify-center items-center px-10 shrink-0 pb-4 select-none animate-fade-in-up">
                 {/* 新增支出 Centered Plus */}
                 <button
                   onClick={() => handleNavigate('add')}
@@ -327,26 +555,9 @@ export default function App() {
                 >
                   <Plus className="w-6 h-6 stroke-[3]" />
                 </button>
-
-                {/* 伴侶設定 (移到新增消費按鈕右邊) */}
-                <button
-                  onClick={() => handleNavigate('binding')}
-                  className={`flex flex-col items-center gap-1.5 transition-all outline-none cursor-pointer ${
-                    currentView === 'binding' ? 'text-indigo-600 scale-102' : 'text-slate-400 hover:text-slate-500'
-                  }`}
-                >
-                  <div className={`p-1 rounded-lg ${currentView === 'binding' ? 'bg-indigo-50' : ''}`}>
-                    <Heart className={`w-5 h-5 transition-colors ${currentView === 'binding' ? 'text-rose-500 fill-rose-200' : 'text-slate-400 hover:text-slate-500'}`} />
-                  </div>
-                  <span className={`text-[10px] font-black tracking-wide uppercase transition-colors ${
-                    currentView === 'binding' ? 'text-indigo-600' : 'text-slate-400'
-                  }`}>
-                    伴侶設定
-                  </span>
-                </button>
-
               </nav>
             )}
+
 
             {/* Bottom Home Indicator */}
             <div className="hidden md:block absolute bottom-1.5 left-1/2 -translate-x-1/2 w-32 h-1 bg-slate-405/50 rounded-full z-40"></div>
