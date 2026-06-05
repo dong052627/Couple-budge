@@ -140,6 +140,7 @@ export default function App() {
 
     setAuthLoading(false);
     const isBound = currentUserProfile.status === 'bound';
+    const isIndividual = currentUserProfile.status === 'individual';
     const activeSpaceId = currentUserProfile.spaceId || '';
     const viewingArchive = selectedSpaceId && selectedSpaceId !== activeSpaceId;
 
@@ -147,7 +148,7 @@ export default function App() {
     let querySpaceId = '';
     if (viewingArchive) {
       querySpaceId = selectedSpaceId!;
-    } else if (isBound && activeSpaceId) {
+    } else if ((isBound || isIndividual) && activeSpaceId) {
       querySpaceId = activeSpaceId;
     } else {
       setExpenses([]);
