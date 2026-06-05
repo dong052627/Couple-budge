@@ -263,7 +263,7 @@ function onSnapshotQueryToPromise(q: any): Promise<any> {
 
 // 4. Expense Live Subscriptions
 export function listenToExpenses(
-  spaceId: string,
+  spaceIds: string[],
   onUpdate: (items: ExpenseItem[]) => void,
   onError: (err: Error) => void
 ) {
@@ -280,7 +280,7 @@ export function listenToExpenses(
       const items: ExpenseItem[] = [];
       snapshot.forEach((docSnap) => {
         const d = docSnap.data();
-        if (d.spaceId === spaceId) {
+        if (spaceIds.includes(d.spaceId)) {
           items.push({
             id: d.id,
             category: d.category as CategoryType,

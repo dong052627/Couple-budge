@@ -38,9 +38,9 @@ service cloud.firestore {
           (resource.data.get('partnerUid', '') == request.auth.uid ||
            resource.data.get('uid', '') == 'mock-partner-' + request.auth.uid)
           && incoming().diff(existing()).affectedKeys().hasOnly([
-            'partnerCode', 'partnerUid', 'partnerName', 'status', 'spaceId', 'updatedAt', 'transferredAmount'
+            'partnerCode', 'partnerUid', 'partnerName', 'status', 'spaceId', 'updatedAt', 'transferredAmount', 'archivedSpaces'
           ])
-          && (incoming().get('status', 'unbound') in ['unbound', 'binding', 'bound'])
+          && (incoming().get('status', 'unbound') in ['unbound', 'binding', 'bound', 'individual'])
         )
       );
 
@@ -49,7 +49,7 @@ service cloud.firestore {
 
     function isValidUser(data, userId) {
       return (data.get('uid', userId) == userId)
-        && (data.get('status', 'unbound') in ['unbound', 'binding', 'bound'])
+        && (data.get('status', 'unbound') in ['unbound', 'binding', 'bound', 'individual'])
         && (data.get('partnerCode', '') is string)
         && (data.get('partnerUid', '') is string)
         && (data.get('partnerName', '') is string)

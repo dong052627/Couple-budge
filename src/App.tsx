@@ -142,14 +142,20 @@ export default function App() {
     const isBound = currentUserProfile.status === 'bound';
     const isIndividual = currentUserProfile.status === 'individual';
     const activeSpaceId = currentUserProfile.spaceId || '';
+    const personalSpaceId = currentUserProfile.uid;
     const viewingArchive = selectedSpaceId && selectedSpaceId !== activeSpaceId;
 
-    // Determine which spaceId to subscribe to
-    let querySpaceId = '';
+    // Determine which spaceIds to subscribe to
+    let querySpaceIds: string[] = [];
     if (viewingArchive) {
-      querySpaceId = selectedSpaceId!;
-    } else if ((isBound || isIndividual) && activeSpaceId) {
-      querySpaceId = activeSpaceId;
+      querySpaceIds = [selectedSpaceId!];
+    } else if (isBound && activeSpaceId) {
+      // Also include personal space so individual records stay visible while merge runs
+      const ids = [activeSpaceId];
+      if (personalSpaceId && personalSpaceId !== activeSpaceId) ids.push(personalSpaceId);
+      querySpaceIds = ids;
+    } else if (isIndividual && activeSpaceId) {
+      querySpaceIds = [activeSpaceId];
     } else {
       setExpenses([]);
       return;
@@ -161,7 +167,7 @@ export default function App() {
         try {
           const mergedCount = await mergeUnboundExpenses(
             currentUserProfile.uid,
-            querySpaceId,
+            activeSpaceId,
             currentUserProfile.partnerUid
           );
           if (mergedCount > 0) {
@@ -169,6 +175,7 @@ export default function App() {
           }
         } catch (error) {
           console.error("Merge error details: ", error);
+          triggerToast('⚠️ 個人帳目合併失敗，請展開設定頁手動導入，或重新登入再試。');
         }
       };
       handleMerge();
@@ -176,7 +183,7 @@ export default function App() {
 
     // B. Maintain live real-time observer
     const unsubscribeLiveExpenses = listenToExpenses(
-      querySpaceId,
+      querySpaceIds,
       (items) => {
         const nameSelf = currentUserProfile.displayName || '我';
         const namePartner = currentUserProfile.partnerName || '另一半';
