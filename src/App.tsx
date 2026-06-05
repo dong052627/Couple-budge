@@ -61,6 +61,7 @@ export default function App() {
   const [editPhotoURL, setEditPhotoURL] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
+
   // Calendar states (lifted from Dashboard)
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -164,7 +165,75 @@ export default function App() {
     const unsubscribeLiveExpenses = listenToExpenses(
       querySpaceId,
       (items) => {
-        setExpenses(items);
+        const nameSelf = currentUserProfile.displayName || '我';
+        const namePartner = currentUserProfile.partnerName || '另一半';
+        const uidSelf = currentUserProfile.uid;
+        const uidPartner = currentUserProfile.partnerUid;
+
+        const resolveUser = (payerId: string | undefined, payerName: string) => {
+          if (payerId === uidSelf) return nameSelf;
+          if (payerId === uidPartner) return namePartner;
+
+          const cleanName = (payerName || '').trim();
+          if (cleanName === nameSelf) return nameSelf;
+          if (cleanName === namePartner) return namePartner;
+
+          if (cleanName === '阿明' || cleanName === '我') {
+            if (nameSelf === '小美' || nameSelf.includes('小美')) {
+              return namePartner;
+            }
+            if (namePartner === '小美' || namePartner.includes('小美')) {
+              return nameSelf;
+            }
+            if (nameSelf.includes('阿明')) return nameSelf;
+            if (namePartner.includes('阿明')) return namePartner;
+            return nameSelf;
+          }
+
+          if (cleanName === '小美' || cleanName === '另一半') {
+            if (nameSelf === '阿明' || nameSelf.includes('阿明')) {
+              return namePartner;
+            }
+            if (namePartner === '阿明' || namePartner.includes('阿明')) {
+              return nameSelf;
+            }
+            if (nameSelf.includes('小美')) return nameSelf;
+            if (namePartner.includes('小美')) return namePartner;
+            return namePartner;
+          }
+
+          return cleanName || payerName;
+        };
+
+        const mapped = items.map(item => {
+          const mappedPayer = resolveUser(item.payerId, item.payer);
+          
+          let mappedFullBearer = item.split.fullBearer;
+          if (item.split.type === 'single') {
+            mappedFullBearer = resolveUser(item.split.fullBearerId, item.split.fullBearer || '');
+          }
+
+          let mappedCustomShares = item.split.customShares;
+          if (item.split.type === 'custom' && item.split.customShares) {
+            mappedCustomShares = {};
+            Object.entries(item.split.customShares).forEach(([k, v]) => {
+              const resolvedKey = resolveUser(undefined, k);
+              mappedCustomShares![resolvedKey] = v;
+            });
+          }
+
+          return {
+            ...item,
+            payer: mappedPayer,
+            split: {
+              ...item.split,
+              fullBearer: mappedFullBearer,
+              customShares: mappedCustomShares
+            }
+          };
+        });
+
+        setExpenses(mapped);
       },
       (error) => {
         console.error("Expenses subscription failure:", error);
@@ -194,6 +263,85 @@ export default function App() {
     setTimeout(() => {
       setToastMessage(null);
     }, 4000);
+  };
+
+  const handleExportCSV = () => {
+    if (expenses.length === 0) {
+      triggerToast("⚠️ 目前沒有任何帳務紀錄可以匯出喔！");
+      return;
+    }
+
+    const nameA = currentUserProfile?.displayName || '我';
+    const nameB = currentUserProfile?.partnerName || '另一半';
+
+    // CSV Headers
+    const headers = ['日期', '分類', '金額', '代墊人', '分攤方式', '詳細分攤', `${nameA}應付份額`, `${nameB}應付份額`, '備註'];
+
+    // Map rows
+    const rows = expenses.map(item => {
+      let splitTypeLabel = '';
+      let splitDetailLabel = '';
+      let shareAmountA = 0;
+      let shareAmountB = 0;
+
+      const amt = item.amount;
+
+      if (item.split.type === '50/50') {
+        splitTypeLabel = '50/50 均分';
+        splitDetailLabel = `雙方均分 50%`;
+        shareAmountA = amt / 2;
+        shareAmountB = amt / 2;
+      } else if (item.split.type === 'single') {
+        splitTypeLabel = '單人全額';
+        const bearer = item.split.fullBearer || item.payer;
+        splitDetailLabel = `由 ${bearer} 負擔全部`;
+        if (bearer === nameA) {
+          shareAmountA = amt;
+          shareAmountB = 0;
+        } else {
+          shareAmountA = 0;
+          shareAmountB = amt;
+        }
+      } else if (item.split.type === 'custom') {
+        splitTypeLabel = '自訂比例';
+        const shares = item.split.customShares || {};
+        const percentA = shares[nameA] !== undefined ? shares[nameA] : 50;
+        const percentB = shares[nameB] !== undefined ? shares[nameB] : 50;
+        splitDetailLabel = `${nameA}: ${percentA}%, ${nameB}: ${percentB}%`;
+        shareAmountA = (amt * percentA) / 100;
+        shareAmountB = (amt * percentB) / 100;
+      }
+
+      // Escape quotes and wrap notes in quotes
+      const cleanNote = (item.note || '').replace(/"/g, '""');
+
+      return [
+        item.date,
+        item.category,
+        amt,
+        item.payer,
+        splitTypeLabel,
+        splitDetailLabel,
+        Math.round(shareAmountA),
+        Math.round(shareAmountB),
+        `"${cleanNote}"`
+      ];
+    });
+
+    // Create CSV content with UTF-8 BOM to prevent Chinese character corruption in Excel
+    const csvContent = "\uFEFF" + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    
+    // Trigger file download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Together_Ledger_帳務報表_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    triggerToast("📥 帳務報表 CSV 檔案已成功匯出並下載！");
   };
 
   const handleNavigate = (view: 'dashboard' | 'add' | 'list' | 'binding') => {
@@ -244,7 +392,7 @@ export default function App() {
                 <span className="text-xs font-black uppercase tracking-widest text-slate-400">詳細設定</span>
                 <button
                   onClick={() => setShowDrawer(false)}
-                  className="p-1 hover:bg-slate-100 text-slate-400 hover:text-slate-650 rounded-lg transition-colors cursor-pointer"
+                  className="p-1 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-lg transition-colors cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -260,7 +408,7 @@ export default function App() {
                     className="w-full flex items-center justify-between text-left focus:outline-none cursor-pointer"
                   >
                     <div className="flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-indigo-505" />
+                      <User className="w-3.5 h-3.5 text-indigo-500" />
                       <span className="text-xs font-black text-slate-700">個人資訊設定</span>
                     </div>
                     {showProfileSettings ? (
@@ -300,7 +448,7 @@ export default function App() {
                                 type="button"
                                 onClick={() => setEditPhotoURL(url)}
                                 className={`w-7 h-7 rounded-full overflow-hidden border transition-all cursor-pointer relative shrink-0 ${
-                                  editPhotoURL === url ? 'ring-2 ring-indigo-505 border-transparent' : 'border-slate-200 hover:scale-105'
+                                  editPhotoURL === url ? 'ring-2 ring-indigo-500 border-transparent' : 'border-slate-200 hover:scale-105'
                                 }`}
                               >
                                 <img src={url} alt="preset" className="w-full h-full object-cover" />
@@ -340,11 +488,10 @@ export default function App() {
                         />
                       </div>
 
-                      {/* Save Button */}
                       <button
                         onClick={handleSaveProfile}
                         disabled={isSavingProfile}
-                        className="w-full bg-indigo-650 hover:bg-indigo-600 disabled:opacity-50 text-white font-extrabold py-2 px-3 rounded-xl text-xs transition-all active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shadow-indigo-100"
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-extrabold py-2 px-3 rounded-xl text-xs transition-all active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shadow-indigo-100"
                       >
                         <Save className="w-3.5 h-3.5" />
                         {isSavingProfile ? '儲存中...' : '儲存設定'}
@@ -378,12 +525,19 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="w-full flex items-center justify-between p-3 bg-slate-50/50 border border-slate-100 opacity-60 rounded-xl text-left cursor-not-allowed">
-                    <div className="flex items-center gap-2 text-slate-600">
-                      <ClipboardList className="w-4 h-4 text-slate-400" />
-                      <span className="text-xs font-medium">帳務報表匯出 (開發中)</span>
+                  <button
+                    onClick={() => {
+                      handleExportCSV();
+                      setShowDrawer(false);
+                    }}
+                    className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100/70 border border-slate-100 rounded-xl transition-all text-left group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2 text-slate-705">
+                      <ClipboardList className="w-4 h-4 text-indigo-500" />
+                      <span className="text-xs font-bold">帳務報表匯出 (CSV)</span>
                     </div>
-                  </div>
+                    <span className="text-[10px] font-bold text-slate-400 group-hover:translate-x-0.5 transition-transform">→</span>
+                  </button>
 
                   {/* 登出帳號按鈕 */}
                   <div className="pt-4 border-t border-slate-100/80">
@@ -392,7 +546,7 @@ export default function App() {
                         handleLogout();
                         setShowDrawer(false);
                       }}
-                      className="w-full flex items-center justify-center gap-2 p-2.5 bg-rose-50 hover:bg-rose-100/85 border border-rose-100/40 text-rose-650 rounded-xl transition-all font-extrabold text-xs cursor-pointer active:scale-98"
+                      className="w-full flex items-center justify-center gap-2 p-2.5 bg-rose-50 hover:bg-rose-100/85 border border-rose-100/40 text-rose-600 rounded-xl transition-all font-extrabold text-xs cursor-pointer active:scale-98"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       <span>登出帳號</span>

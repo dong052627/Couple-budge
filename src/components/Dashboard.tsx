@@ -285,34 +285,16 @@ export default function Dashboard({
           </div>
         </div>
 
-        {/* Splitting Ratio Progress Bar */}
-        <div className="mt-5 space-y-1.5">
-          <div className="w-full h-1.5 bg-slate-200/80 rounded-full overflow-hidden flex">
-            <div className="bg-blue-500 h-full transition-all duration-500" style={{ width: `${pctA}%` }}></div>
-            <div className="bg-pink-500 h-full transition-all duration-500" style={{ width: `${pctB}%` }}></div>
-          </div>
-          <div className="flex justify-between text-[9px] font-bold text-slate-500">
-            <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              {nameA}負擔占比 ({pctA.toFixed(0)}%)
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-pink-500"></span>
-              {nameB}負擔占比 ({pctB.toFixed(0)}%)
-            </span>
-          </div>
-        </div>
-
         <div className="h-[1px] bg-slate-200/50 my-4"></div>
 
         {/* Grid: Individual Paid Stats */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-0.5">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">{nameA}已付</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">{nameA}支出金額</span>
             <div className="text-base font-extrabold text-blue-600">NT$ {stats.paidA.toLocaleString()}</div>
           </div>
           <div className="space-y-0.5 border-l border-slate-200/50 pl-4">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">{nameB}已付</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">{nameB}支出金額</span>
             <div className="text-base font-extrabold text-pink-600">NT$ {stats.paidB.toLocaleString()}</div>
           </div>
         </div>

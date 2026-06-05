@@ -31,7 +31,7 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
   const [category, setCategory] = useState<CategoryType>('餐飲');
   const [amount, setAmount] = useState<string>('');
   const [payer, setPayer] = useState<string>(nameA);
-  
+
   // Set fallback defaults for date picker input in standard ISO format (local date)
   const getTodayString = () => {
     const today = new Date();
@@ -42,7 +42,7 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
   };
   const [date, setDate] = useState<string>(getTodayString());
   const [note, setNote] = useState<string>('');
-  
+
   // Split settings
   const [splitType, setSplitType] = useState<SplitMethodType>('single');
   const [shareA, setShareA] = useState<number>(50); // for 'custom' (A %)
@@ -116,7 +116,7 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-5 space-y-6 pb-24">
-      
+
       {/* Dynamic Design Header bar */}
       <div className="flex items-center gap-3">
         <button
@@ -149,16 +149,14 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
                   key={catKey}
                   type="button"
                   onClick={() => setCategory(catKey)}
-                  className={`flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border transition-all select-none ${
-                    isSelected
-                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-100'
-                      : 'bg-white border-slate-100 text-slate-600 hover:border-slate-200'
-                  }`}
+                  className={`flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border transition-all select-none ${isSelected
+                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-100'
+                    : 'bg-white border-slate-100 text-slate-600 hover:border-slate-200'
+                    }`}
                 >
                   <div
-                    className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                      isSelected ? 'bg-indigo-505/80 text-white' : `${config.bgColor} ${config.textColor}`
-                    }`}
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isSelected ? 'bg-indigo-600/80 text-white' : `${config.bgColor} ${config.textColor}`
+                      }`}
                   >
                     <CategoryIcon name={config.iconName} className="w-4 h-4" />
                   </div>
@@ -171,7 +169,7 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
 
         {/* 2. Amount and Date Row */}
         <div className="grid grid-cols-2 gap-4">
-          
+
           {/* Total Amount Input */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-slate-505 block">
@@ -186,7 +184,6 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
                 placeholder="0"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                onWheel={(e) => e.currentTarget.blur()}
                 required
                 className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-100/80 rounded-2xl text-slate-800 font-extrabold text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100"
               />
@@ -224,11 +221,10 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
               <button
                 type="button"
                 onClick={() => setPayer(nameA)}
-                className={`py-2 px-1.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  payer === nameA
-                    ? 'bg-blue-500 text-white shadow-xs'
-                    : 'text-slate-505 hover:text-slate-800'
-                }`}
+                className={`py-2 px-1.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${payer === nameA
+                  ? 'bg-blue-500 text-white shadow-xs'
+                  : 'text-slate-505 hover:text-slate-800'
+                  }`}
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${payer === nameA ? 'bg-white' : 'bg-blue-500'}`}></span>
                 <span className="truncate max-w-[65px]">{nameA}</span>
@@ -236,11 +232,10 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
               <button
                 type="button"
                 onClick={() => setPayer(nameB)}
-                className={`py-2 px-1.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  payer === nameB
-                    ? 'bg-pink-500 text-white shadow-xs'
-                    : 'text-slate-505 hover:text-slate-800'
-                }`}
+                className={`py-2 px-1.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${payer === nameB
+                  ? 'bg-pink-500 text-white shadow-xs'
+                  : 'text-slate-505 hover:text-slate-800'
+                  }`}
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${payer === nameB ? 'bg-white' : 'bg-pink-500'}`}></span>
                 <span className="truncate max-w-[65px]">{nameB}</span>
@@ -266,7 +261,7 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
 
         {/* 4. Split Method Container */}
         <div className="bg-slate-50 border border-slate-100 rounded-3xl p-5 space-y-4 shadow-2xs">
-          
+
           <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/50">
             <Coins className="w-4 h-4 text-indigo-500" />
             <span className="text-xs font-black text-slate-700">選擇這筆消費的分攤管道</span>
@@ -277,33 +272,30 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
             <button
               type="button"
               onClick={() => setSplitType('single')}
-              className={`py-1.5 px-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
-                splitType === 'single'
-                  ? 'bg-white text-indigo-600 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
+              className={`py-1.5 px-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${splitType === 'single'
+                ? 'bg-white text-indigo-600 shadow-2xs'
+                : 'text-slate-500 hover:text-slate-700'
+                }`}
             >
               單人全額
             </button>
             <button
               type="button"
               onClick={() => setSplitType('50/50')}
-              className={`py-1.5 px-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
-                splitType === '50/50'
-                  ? 'bg-white text-indigo-600 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
+              className={`py-1.5 px-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${splitType === '50/50'
+                ? 'bg-white text-indigo-600 shadow-2xs'
+                : 'text-slate-500 hover:text-slate-700'
+                }`}
             >
               50/50 均分
             </button>
             <button
               type="button"
               onClick={() => setSplitType('custom')}
-              className={`py-1.5 px-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
-                splitType === 'custom'
-                  ? 'bg-white text-indigo-600 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
+              className={`py-1.5 px-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${splitType === 'custom'
+                ? 'bg-white text-indigo-600 shadow-2xs'
+                : 'text-slate-500 hover:text-slate-700'
+                }`}
             >
               自訂比例
             </button>
@@ -311,7 +303,7 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
 
           {/* Sub Panels Based on Split selection */}
           <div className="bg-white border border-slate-100/80 rounded-2xl p-4 animate-fade-in-down">
-            
+
             {/* 50/50 panel */}
             {splitType === '50/50' && (
               <div className="space-y-1">
@@ -380,7 +372,6 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
                         max="100"
                         value={shareA}
                         onChange={(e) => handleShareAChange(parseInt(e.target.value) || 0)}
-                        onWheel={(e) => e.currentTarget.blur()}
                         className="w-full px-2.5 py-1.5 bg-white border border-slate-100 rounded-xl text-xs text-blue-800 font-extrabold text-center focus:outline-none focus:border-blue-400"
                       />
                     </div>
@@ -392,7 +383,6 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
                         max="100"
                         value={shareB}
                         onChange={(e) => handleShareBChange(parseInt(e.target.value) || 0)}
-                        onWheel={(e) => e.currentTarget.blur()}
                         className="w-full px-2.5 py-1.5 bg-white border border-slate-100 rounded-xl text-xs text-pink-800 font-extrabold text-center focus:outline-none focus:border-pink-400"
                       />
                     </div>
@@ -404,7 +394,7 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
             {/* Split Amount Result Calculator Preview */}
             <div className="mt-4 border-t border-slate-100 pt-3 flex flex-col gap-2 bg-slate-50/40 p-2.5 rounded-xl border border-slate-100/60">
               <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">本筆費用計算預覽 (各自承擔)</span>
-              
+
               <div className="grid grid-cols-2 gap-2 text-xs font-bold">
                 <p className="text-blue-700 flex items-center justify-between bg-blue-50/20 px-2 py-1 rounded-lg">
                   <span className="truncate max-w-[100px]">{nameA}份額:</span>
@@ -440,7 +430,7 @@ export default function AddExpenseForm({ currentUserProfile, onAddExpense, onCan
           >
             取消退回
           </button>
-          
+
           <button
             type="submit"
             className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold py-3.5 px-4 rounded-xl text-xs tracking-widest shadow-md shadow-indigo-100 transition-all active:scale-98 select-none flex items-center justify-center gap-1.5 cursor-pointer"

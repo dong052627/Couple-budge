@@ -280,11 +280,13 @@ export function listenToExpenses(
             category: d.category as CategoryType,
             amount: d.amount,
             payer: d.payerName,
+            payerId: d.payerId,
             date: d.date,
             note: d.note,
             split: {
               type: d.splitType,
               fullBearer: d.fullBearerName,
+              fullBearerId: d.fullBearerId,
               customShares: d.customShares,
             },
           });
