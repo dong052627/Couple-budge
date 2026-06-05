@@ -61,6 +61,8 @@ export default function App() {
   const [editPhotoURL, setEditPhotoURL] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
+  // Archive space switcher
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
 
   // Calendar states (lifted from Dashboard)
   const [showCalendar, setShowCalendar] = useState(false);
@@ -126,24 +128,33 @@ export default function App() {
     return () => unsubscribeAuth();
   }, []);
 
+  // Reset selected space when user re-binds (spaceId changes)
+  useEffect(() => {
+    setSelectedSpaceId(null);
+  }, [currentUserProfile?.spaceId]);
+
   // 2. Real-time synchronizations of space expenses and auto merging
   useEffect(() => {
     if (!currentUserProfile) return;
 
     setAuthLoading(false);
     const isBound = currentUserProfile.status === 'bound';
-    
-    // If not bound, do not attempt to subscribe to expenses or merge
-    if (!isBound) {
+    const activeSpaceId = currentUserProfile.spaceId || '';
+    const viewingArchive = selectedSpaceId && selectedSpaceId !== activeSpaceId;
+
+    // Determine which spaceId to subscribe to
+    let querySpaceId = '';
+    if (viewingArchive) {
+      querySpaceId = selectedSpaceId!;
+    } else if (isBound && activeSpaceId) {
+      querySpaceId = activeSpaceId;
+    } else {
       setExpenses([]);
       return;
     }
 
-    const querySpaceId = currentUserProfile.spaceId;
-    if (!querySpaceId) return;
-
-    // A. Trigger one-time safe merge if newly bound
-    if (currentUserProfile.partnerUid) {
+    // A. Trigger one-time safe merge only for active (non-archive) bound space
+    if (!viewingArchive && isBound && currentUserProfile.partnerUid) {
       const handleMerge = async () => {
         try {
           const mergedCount = await mergeUnboundExpenses(
@@ -241,7 +252,7 @@ export default function App() {
     );
 
     return () => unsubscribeLiveExpenses();
-  }, [currentUserProfile?.status, currentUserProfile?.spaceId, currentUserProfile?.uid, currentUserProfile?.partnerUid]);
+  }, [currentUserProfile?.status, currentUserProfile?.spaceId, currentUserProfile?.uid, currentUserProfile?.partnerUid, selectedSpaceId]);
 
   // Phone Mock Clock
   useEffect(() => {
@@ -359,6 +370,14 @@ export default function App() {
 
   // Check if fully paired in real-time
   const isBound = currentUserProfile?.status === 'bound';
+
+  // Archived space switcher helpers
+  const archivedSpaces = currentUserProfile?.archivedSpaces || [];
+  const activeSpaceId = currentUserProfile?.spaceId || '';
+  const isReadOnlySpace = !!(selectedSpaceId && selectedSpaceId !== activeSpaceId);
+  const currentArchiveLabel = isReadOnlySpace
+    ? archivedSpaces.find(s => s.spaceId === selectedSpaceId)?.partnerName || '封存帳本'
+    : null;
 
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-0 md:p-6 transition-colors duration-300">
@@ -609,6 +628,30 @@ export default function App() {
                 >
                   <Menu className="w-5 h-5" />
                 </button>
+
+                {/* Space Switcher - shows if archived spaces exist */}
+                {archivedSpaces.length > 0 && (
+                  <div className="flex-1 mx-3 relative">
+                    <select
+                      value={selectedSpaceId || activeSpaceId}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedSpaceId(val === activeSpaceId ? null : val);
+                        setSelectedDate(null);
+                      }}
+                      className="w-full text-[10px] font-black text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 appearance-none focus:outline-none focus:border-indigo-400 cursor-pointer pr-6 truncate"
+                    >
+                      <option value={activeSpaceId}>📌 目前帳本</option>
+                      {archivedSpaces.map((s) => (
+                        <option key={s.spaceId} value={s.spaceId}>
+                          📁 與 {s.partnerName} 的存檔 (唯讀)
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-3 h-3 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                )}
+
                 <button
                   onClick={() => setShowCalendar(!showCalendar)}
                   className={`p-2 hover:bg-slate-100 active:scale-95 rounded-xl transition-all cursor-pointer focus:outline-none ${
@@ -620,6 +663,21 @@ export default function App() {
                   <Calendar className="w-5 h-5" />
                 </button>
               </header>
+            )}
+
+            {/* Read-only archive banner */}
+            {isReadOnlySpace && (
+              <div className="bg-amber-50 border-b border-amber-200/70 px-4 py-2 flex items-center gap-2 shrink-0">
+                <span className="text-[10px] font-black text-amber-700 tracking-wide">
+                  📁 唯讀封存帳本：與「{currentArchiveLabel}」的歷史紀錄
+                </span>
+                <button
+                  onClick={() => setSelectedSpaceId(null)}
+                  className="ml-auto text-[9px] font-extrabold text-amber-600 hover:text-amber-800 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-lg transition-colors cursor-pointer shrink-0"
+                >
+                  返回目前帳本
+                </button>
+              </div>
             )}
 
 
@@ -664,6 +722,7 @@ export default function App() {
                       setShowCalendar={setShowCalendar}
                       selectedDate={selectedDate}
                       setSelectedDate={setSelectedDate}
+                      isReadOnly={isReadOnlySpace}
                     />
                   )}
 
@@ -699,7 +758,7 @@ export default function App() {
             </main>
 
             {/* Navigation buttons */}
-            {currentUserProfile && isBound && (
+            {currentUserProfile && isBound && !isReadOnlySpace && (
               <nav className="h-20 bg-white border-t border-slate-100/60 sticky bottom-0 z-30 flex justify-center items-center px-10 shrink-0 pb-4 select-none animate-fade-in-up">
                 {/* 新增支出 Centered Plus */}
                 <button
@@ -726,7 +785,7 @@ export default function App() {
             expense={selectedExpense}
             currentUserProfile={currentUserProfile}
             onClose={() => setSelectedExpense(null)}
-            onDeleteExpense={async (id) => {
+            onDeleteExpense={isReadOnlySpace ? undefined : async (id) => {
               try {
                 await deleteFirestoreExpense(id);
                 setSelectedExpense(null);

@@ -7,7 +7,7 @@ import {
   LogOut,
   AlertCircle
 } from 'lucide-react';
-import { UserProfile, submitPartnerInviteCode, unbindPartner, setupMockPartner } from '../firebase';
+import { UserProfile, submitPartnerInviteCode, unbindPartnerAndArchive, setupMockPartner } from '../firebase';
 
 interface BindingViewProps {
   currentUserProfile: UserProfile;
@@ -115,7 +115,7 @@ export default function BindingView({
     setErrorMsg(null);
     setSuccessMsg(null);
     try {
-      const result = await unbindPartner(currentUserProfile);
+      const result = await unbindPartnerAndArchive(currentUserProfile);
       if (result.success) {
         setSuccessMsg(result.message);
         triggerToast(result.message);

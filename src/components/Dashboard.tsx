@@ -31,6 +31,7 @@ interface DashboardProps {
   setShowCalendar: (show: boolean) => void;
   selectedDate: string | null;
   setSelectedDate: (date: string | null) => void;
+  isReadOnly?: boolean;
 }
 
 export default function Dashboard({
@@ -41,7 +42,8 @@ export default function Dashboard({
   showCalendar,
   setShowCalendar,
   selectedDate,
-  setSelectedDate
+  setSelectedDate,
+  isReadOnly = false,
 }: DashboardProps) {
   const [showMath, setShowMath] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -328,8 +330,8 @@ export default function Dashboard({
             </div>
           </div>
 
-          {/* Increment Input (Amount transferred this time) */}
-          {stats.debtor !== 'none' && cloudTransferred < stats.debtAmount && (
+          {/* Increment Input (Amount transferred this time) - hidden in read-only mode */}
+          {!isReadOnly && stats.debtor !== 'none' && cloudTransferred < stats.debtAmount && (
 
             <div className="bg-white/60 backdrop-blur-xs rounded-xl p-2.5 border border-slate-200/60 flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 shrink-0">

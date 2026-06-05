@@ -122,6 +122,12 @@ export interface UserProfile {
   status: 'unbound' | 'binding' | 'bound';
   spaceId: string;
   transferredAmount?: number;
+  archivedSpaces?: {
+    spaceId: string;
+    partnerName: string;
+    partnerUid: string;
+    archivedAt: string;
+  }[];
 }
 
 // Helper: generate 6 chars code of structure LOVE-XXXX
@@ -393,45 +399,92 @@ export async function mergeUnboundExpenses(myUid: string, jointSpaceId: string, 
   }
 }
 
-// 8. Unbind partner relationship
-export async function unbindPartner(currentUserProfile: UserProfile): Promise<{ success: boolean; message: string }> {
+// 8. Unbind partner relationship and archive the joint space
+export async function unbindPartnerAndArchive(
+  currentUserProfile: UserProfile
+): Promise<{ success: boolean; message: string }> {
   const myUid = currentUserProfile.uid;
   const partnerUid = currentUserProfile.partnerUid;
+  const activeSpaceId = currentUserProfile.spaceId;
+  const partnerName = currentUserProfile.partnerName;
+  const archiveTime = new Date().toISOString();
 
   try {
-    // 1. Reset my own profile relationship status
     const myRef = doc(db, 'users', myUid);
-    await updateDoc(myRef, {
+    const updates: any = {
       partnerCode: '',
       partnerUid: '',
       partnerName: '',
       status: 'unbound',
       spaceId: '',
+      transferredAmount: 0,
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    // Only archive if there is an active space and partner
+    if (activeSpaceId && partnerUid) {
+      const myArchived = currentUserProfile.archivedSpaces || [];
+      const isAlreadyArchived = myArchived.some(s => s.spaceId === activeSpaceId);
+      if (!isAlreadyArchived) {
+        updates.archivedSpaces = [
+          ...myArchived,
+          {
+            spaceId: activeSpaceId,
+            partnerName: partnerName || '伴侶',
+            partnerUid: partnerUid,
+            archivedAt: archiveTime,
+          }
+        ];
+      }
+    }
+
+    await updateDoc(myRef, updates);
 
     // 2. Clear partner profile relationship symmetrically if it exists
     if (partnerUid) {
       const partnerRef = doc(db, 'users', partnerUid);
       try {
-        await updateDoc(partnerRef, {
-          partnerCode: '',
-          partnerUid: '',
-          partnerName: '',
-          status: 'unbound',
-          spaceId: '',
-          updatedAt: serverTimestamp(),
-        });
+        const partnerSnap = await getDoc(partnerRef);
+        if (partnerSnap.exists()) {
+          const partnerData = partnerSnap.data() as UserProfile;
+          const partnerArchived = partnerData.archivedSpaces || [];
+          
+          const partnerUpdates: any = {
+            partnerCode: '',
+            partnerUid: '',
+            partnerName: '',
+            status: 'unbound',
+            spaceId: '',
+            transferredAmount: 0,
+            updatedAt: serverTimestamp(),
+          };
+
+          if (activeSpaceId) {
+            const isAlreadyArchived = partnerArchived.some(s => s.spaceId === activeSpaceId);
+            if (!isAlreadyArchived) {
+              partnerUpdates.archivedSpaces = [
+                ...partnerArchived,
+                {
+                  spaceId: activeSpaceId,
+                  partnerName: currentUserProfile.displayName || '伴侶',
+                  partnerUid: myUid,
+                  archivedAt: archiveTime,
+                }
+              ];
+            }
+          }
+
+          await updateDoc(partnerRef, partnerUpdates);
+        }
       } catch (err) {
-        // If partner update fails (e.g. permission or they already unbound), log and continue
-        console.warn('Partner document reset skipped or failed: ', err);
+        console.warn('Partner document reset/archive skipped or failed: ', err);
       }
     }
 
-    return { success: true, message: '💔 伴侶關係已成功解除！' };
+    return { success: true, message: '💔 伴侶關係已解除，歷史記帳空間已成功封存！' };
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `users/${myUid}`);
-    return { success: false, message: '解除綁定時發生錯誤：' + (error instanceof Error ? error.message : String(error)) };
+    return { success: false, message: '解除綁定與封存時發生錯誤：' + (error instanceof Error ? error.message : String(error)) };
   }
 }
 
