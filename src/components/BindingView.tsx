@@ -5,7 +5,9 @@ import {
   Check,
   ArrowRight,
   LogOut,
-  AlertCircle
+  AlertCircle,
+  Download,
+  ShieldCheck
 } from 'lucide-react';
 import { UserProfile, submitPartnerInviteCode, unbindPartnerAndArchive, setupMockPartner } from '../firebase';
 
@@ -14,6 +16,7 @@ interface BindingViewProps {
   onLogout: () => void;
   onSuccessBind: () => void;
   triggerToast: (msg: string) => void;
+  onExportCSV: () => void;
 }
 
 export default function BindingView({
@@ -21,6 +24,7 @@ export default function BindingView({
   onLogout,
   onSuccessBind,
   triggerToast,
+  onExportCSV,
 }: BindingViewProps) {
   const [partnerInput, setPartnerInput] = useState('');
   const [copied, setCopied] = useState(false);
@@ -30,6 +34,7 @@ export default function BindingView({
   const [showUnbindConfirm, setShowUnbindConfirm] = useState(false);
   const [isUnbinding, setIsUnbinding] = useState(false);
   const [isMocking, setIsMocking] = useState(false);
+  const [csvExported, setCsvExported] = useState(false);
 
   const myCode = currentUserProfile.myCode;
   const currentStatusName = currentUserProfile.status;
@@ -234,22 +239,50 @@ export default function BindingView({
             {!showUnbindConfirm ? (
               <button
                 type="button"
-                onClick={() => setShowUnbindConfirm(true)}
+                onClick={() => { setShowUnbindConfirm(true); setCsvExported(false); }}
                 className="w-full py-2.5 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 font-extrabold border border-rose-200 rounded-xl text-[10px] tracking-wider uppercase transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs active:scale-98"
               >
                 <span>{currentStatusName === 'bound' ? '💔 解除伴侶配對' : '🚫 取消綁定申請'}</span>
               </button>
             ) : (
-              <div className="bg-white border border-rose-200 rounded-xl p-3 space-y-2.5 animate-fade-in text-center">
-                <p className="text-[10px] text-rose-700 font-bold leading-normal">
-                  ⚠️ 您確定要解除配對嗎？
-                  <br />
-                  解綁後您將回到單人模式，且無法繼續共享該伴侶的共同帳本。
-                </p>
+              <div className="bg-white border border-rose-200 rounded-xl p-3 space-y-3 animate-fade-in">
+
+                {/* Step 1: Warning */}
+                <div className="bg-amber-50 border border-amber-200/70 rounded-xl p-3 space-y-2">
+                  <p className="text-[10px] font-black text-amber-800 flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    解綁前強烈建議先備份
+                  </p>
+                  <p className="text-[9px] text-amber-700 leading-relaxed">
+                    解除後，共同帳本將封存為唯讀。強烈建議您先匯出一份 CSV 報表，永久保存所有財務明細，以防未來無法取用。
+                  </p>
+                </div>
+
+                {/* Step 2: Export Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    onExportCSV();
+                    setCsvExported(true);
+                  }}
+                  className={`w-full py-2 rounded-xl text-[10px] font-extrabold tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer border ${
+                    csvExported
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white border-transparent shadow-xs active:scale-98'
+                  }`}
+                >
+                  {csvExported ? (
+                    <><ShieldCheck className="w-3.5 h-3.5" />已備份完畢 ✓</>
+                  ) : (
+                    <><Download className="w-3.5 h-3.5" />匯出歷史報表 (CSV)</>
+                  )}
+                </button>
+
+                {/* Step 3: Confirm (more prominent after export, muted before) */}
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setShowUnbindConfirm(false)}
+                    onClick={() => { setShowUnbindConfirm(false); setCsvExported(false); }}
                     className="flex-1 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold rounded-lg text-[10px] border border-slate-200 transition-all cursor-pointer"
                   >
                     保留配對
@@ -258,12 +291,16 @@ export default function BindingView({
                     type="button"
                     onClick={handleUnbind}
                     disabled={isUnbinding}
-                    className="flex-1 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-[10px] transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                    className={`flex-1 py-1.5 font-bold rounded-lg text-[10px] transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs ${
+                      csvExported
+                        ? 'bg-rose-600 hover:bg-rose-700 text-white'
+                        : 'bg-rose-200 text-rose-400 cursor-pointer'
+                    }`}
                   >
                     {isUnbinding ? (
                       <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                     ) : (
-                      '確認解除'
+                      csvExported ? '確認解除' : '跳過備份，直接解除'
                     )}
                   </button>
                 </div>

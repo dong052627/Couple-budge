@@ -698,6 +698,7 @@ export default function App() {
                     triggerToast('❤️ 恭喜！雙方成功互相綁定金鑰，快來記錄第一筆支出吧！');
                   }}
                   triggerToast={triggerToast}
+                  onExportCSV={handleExportCSV}
                 />
               ) : (
                 <>
@@ -710,6 +711,7 @@ export default function App() {
                         setCurrentView('dashboard');
                       }}
                       triggerToast={triggerToast}
+                      onExportCSV={handleExportCSV}
                     />
                   )}
                   {currentView === 'dashboard' && (
